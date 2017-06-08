@@ -2,40 +2,40 @@
 
 Todo Completion: 12/36 [33.3%]
 
-[ ] OsWindow
-    [ ] Creating windows
-        [x] Standard
-        [ ] Borderless
-    [x] Destroying windows
-    [ ] Callbacks
-        [ ] CloseCallback
-        [ ] ResizeCallback
-        [ ] WindowModeCallback
-        [ ] WindowMoveCallback
-    [ ] Window modes
-        [x] Show window
-        [x] Hide window
-        [ ] Minimize window
-        [ ] Maximize window
-        [ ] Fullscreen window
-        [ ] Always-on-top window
-    [ ] Resizing the window
-    [x] Win32 specifics
-        [x] Creating window with owned device context (for graphics APIs)
-    [ ] Set icon
-    [x] Set title
-    [ ] Set cursor bitmap
-    [ ] Create window on specific monitor?
-    [ ] Set user pointer (for custom data)
-    [ ] Changing focus
-    [ ] Clipboard support
-[ ] WindowInput
-    [x] Processing Events
-    [ ] Callbacks
-        [x] KeyCallback
-        [x] CursorCallback
-        [ ] CursorEnterCallback
-        [ ] CursorLeaveCallback
-        [x] MouseClickCallback
-        [x] ScrollCallback
-    [x] Enable querying key state
+- [ ] OsWindow
+    - [ ] Creating windows
+        - [x] Standard
+        - [ ] Borderless
+    - [x] Destroying windows
+    - [ ] Callbacks
+        - [ ] CloseCallback
+        - [ ] ResizeCallback
+        - [ ] WindowModeCallback
+        - [ ] WindowMoveCallback
+    - [ ] Window modes
+        - [x] Show window
+        - [x] Hide window
+        - [ ] Minimize window
+        - [ ] Maximize window
+        - [ ] Fullscreen window
+        - [ ] Always-on-top window
+    - [ ] Resizing the window
+    - [x] Win32 specifics
+        - [x] Creating window with owned device context (for graphics APIs)
+    - [ ] Set icon
+    - [x] Set title
+    - [ ] Set cursor bitmap
+    - [ ] Create window on specific monitor?
+    - [ ] Set user pointer (for custom data)
+    - [ ] Changing focus
+    - [ ] Clipboard support
+- [ ] WindowInput
+    - [x] Processing Events
+    - [ ] Callbacks
+        - [x] KeyCallback
+        - [x] CursorCallback
+        - [ ] CursorEnterCallback
+        - [ ] CursorLeaveCallback
+        - [x] MouseClickCallback
+        - [x] ScrollCallback
+    - [x] Enable querying key state
