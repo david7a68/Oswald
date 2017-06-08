@@ -1,5 +1,4 @@
-
-Copyright (c) 2017, David
+Copyright (c) 2017, David Zhang
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
