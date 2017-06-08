@@ -11,7 +11,7 @@ Unfortunately, source documentation in Oswald is a bit scarce, but is being acti
 # Platform Support
 Currently, only windows is supported (and then, only to a limited degree). However, more platforms are planned.
 
-[x] Windows
-[ ] Linux
-[ ] macOS (OSX)
-[ ] Android
+ [x] Windows
+ [ ] Linux
+ [ ] macOS (OSX)
+ [ ] Android
