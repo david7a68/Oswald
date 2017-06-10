@@ -11,31 +11,23 @@ import oswald.platform : platformPageScroll;
 
 pragma(lib, "user32");
 
+static immutable uint win32ScrollLines;
+
 struct Win32WindowData
 {
     HWND handle;
     HDC hdc;
 }
 
-static immutable wndclassName = "viewport_win32_wndclass_name"w;
-static immutable windowHandlePropertyName = "OSWALD_WINDOW"w;
-static immutable uint win32ScrollLines;
-
 @trusted static this()
 {
-    void registerWindowClass()
-    {
-        WNDCLASSEXW wc;
-        wc.cbSize = WNDCLASSEXW.sizeof;
-        wc.style = CS_OWNDC | CS_VREDRAW | CS_HREDRAW;
-        wc.lpfnWndProc = &windowProc;
-        wc.hInstance = GetModuleHandle(null);
-        wc.lpszClassName = &wndclassName[0];
-
-        RegisterClassExW(&wc);
-    }
-
-    registerWindowClass();
+    WNDCLASSEXW wc;
+    wc.cbSize = WNDCLASSEXW.sizeof;
+    wc.style = CS_OWNDC | CS_VREDRAW | CS_HREDRAW;
+    wc.lpfnWndProc = &windowProc;
+    wc.hInstance = GetModuleHandle(null);
+    wc.lpszClassName = &wndclassName[0];
+    RegisterClassExW(&wc);
 
     uint lines;
     SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &lines, 0);
@@ -95,16 +87,6 @@ alias win32HideWindow = win32SetWindowMode!SW_HIDE;
     ShowWindow(cast(void*) context.handle, mode);
 }
 
-@trusted void win32SetStatePointer(OsWindow* context)
-{
-    SetPropW(context.win32.handle, windowHandlePropertyName.ptr, context);
-}
-
-@trusted OsWindow* win32GetStatePointer(HWND hwnd)
-{
-    return cast(OsWindow*) GetPropW(hwnd, windowHandlePropertyName.ptr);
-}
-
 @trusted WindowError win32SetTitle(Win32WindowData context, string title)
 {
     auto tmpTitle = getTitleAsNativeString(title);
@@ -139,7 +121,17 @@ alias win32HideWindow = win32SetWindowMode!SW_HIDE;
     }
 }
 
+package:
+
+@trusted OsWindow* win32GetStatePointer(HWND hwnd)
+{
+    return cast(OsWindow*) GetPropW(hwnd, windowHandlePropertyName.ptr);
+}
+
 private:
+
+static immutable wndclassName = "viewport_win32_wndclass_name"w;
+static immutable windowHandlePropertyName = "OSWALD_WINDOW"w;
 
 @safe @nogc wchar* getTitleAsNativeString(string title) nothrow
 {

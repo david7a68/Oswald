@@ -36,7 +36,6 @@ version (Windows)
 
 mixin(genPlatformAlias!"platform"(platformFunctions, functionPrefix));
 mixin(genPlatformAlias!"platform"(platformConstants, functionPrefix));
-// mixin(genPlatformTypeAliases(platformTypes, typePrefix));
 
 private:
 

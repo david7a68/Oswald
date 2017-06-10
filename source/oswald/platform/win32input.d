@@ -1,11 +1,11 @@
 module oswald.platform.win32input;
 
 import core.sys.windows.windows;
-import oswald.window : OsWindow;
-import oswald.input : Key, KeyState, Keycodes;
 import oswald.input : Cursor;
-import oswald.input : MouseButton, MouseButtonState, MouseButtons;
+import oswald.input : MouseButton, MouseButtons, MouseButtonState;
+import oswald.input : Key, Keycodes, KeyState;
 import oswald.input : WindowInput;
+import oswald.window : OsWindow;
 import oswald.platform.win32 : win32GetStatePointer;
 
 /**
@@ -40,7 +40,7 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP:
-        Key key = win32TranslateKey(wp, lp);
+        Key key = win32ProcessKeyEvent(wp, lp);
         const isInvalidKey = key.keycode == Keycodes.Invalid;
 
         if (!isInvalidKey && window.input.keyCallback)
@@ -63,7 +63,7 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
         return 0;
 
     case WM_MOUSEMOVE:
-        auto cursor = win32ProcessCursorMove(window, wp, lp);
+        auto cursor = win32ProcessCursorMove(window.input, wp, lp);
 
         if (window.input.cursorCallback)
             assumeWontThrow(window.input.cursorCallback(window, cursor));
@@ -105,7 +105,7 @@ auto extractCursorPos(LPARAM lp) nothrow
     return tuple(splitter.x, splitter.y);
 }
 
-Key win32TranslateKey(WPARAM wp, LPARAM lp) nothrow
+Key win32ProcessKeyEvent(WPARAM wp, LPARAM lp) nothrow
 {
     Keycodes getKeycode(WPARAM wp, LPARAM lp)
     {
@@ -133,7 +133,7 @@ Key win32TranslateKey(WPARAM wp, LPARAM lp) nothrow
 
 float win32ProcessScrollLines(ref WindowInput input, WPARAM wp, LPARAM lp) nothrow
 {
-    import oswald.platform: platformScrollLines;
+    import oswald.platform : platformScrollLines;
 
     auto lines = GET_WHEEL_DELTA_WPARAM(wp);
 
@@ -142,13 +142,11 @@ float win32ProcessScrollLines(ref WindowInput input, WPARAM wp, LPARAM lp) nothr
     return lines / WHEEL_DELTA;
 }
 
-Cursor win32ProcessCursorMove(OsWindow* window, WPARAM wp, LPARAM lp) nothrow
+Cursor win32ProcessCursorMove(ref WindowInput input, WPARAM wp, LPARAM lp) nothrow
 {
-    void updateMouseButtons(OsWindow* window, short x, short y)
+    void updateMouseButtons(ref WindowInput input, short x, short y)
     {
-        auto input = window.input;
-
-        foreach(ref button; input.mouseButtons)
+        foreach (ref button; input.mouseButtons)
         {
             if (button.state == MouseButtonState.Pressed)
             {
@@ -161,7 +159,7 @@ Cursor win32ProcessCursorMove(OsWindow* window, WPARAM wp, LPARAM lp) nothrow
         }
     }
 
-    auto cursor = window.input.cursor;
+    auto cursor = input.cursor;
 
     cursor.oldX = cursor.x;
     cursor.oldY = cursor.y;
@@ -170,7 +168,7 @@ Cursor win32ProcessCursorMove(OsWindow* window, WPARAM wp, LPARAM lp) nothrow
     cursor.x = pos[0];
     cursor.y = pos[1];
 
-    updateMouseButtons(window, cursor.x, cursor.y);
+    updateMouseButtons(input, cursor.x, cursor.y);
 
     return cursor;
 }
@@ -191,18 +189,26 @@ MouseButton win32ProcessMouseButton(uint msg, WPARAM wp, LPARAM lp) nothrow
         }
     }
 
-    MouseButton button;
+    MouseButtons getButton(uint msg, WPARAM wp)
+    {
+        switch (msg)
+        {
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+            return MouseButtons.Left;
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP:
+            return MouseButtons.Right;
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONUP:
+            return MouseButtons.Middle;
+        default:
+            return (LOWORD(wp) == XBUTTON1) ? MouseButtons.Button_4 : MouseButtons.Button_5;
+        }
+    }
 
-    if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONUP)
-        button.button = MouseButtons.Left;
-    else if (msg == WM_RBUTTONDOWN || msg == WM_RBUTTONUP)
-        button.button = MouseButtons.Right;
-    else if (msg == WM_MBUTTONDOWN || msg == WM_MBUTTONUP)
-        button.button = MouseButtons.Middle;
-    else if (HIWORD(wp) == XBUTTON1)
-        button.button = MouseButtons.Button_4;
-    else
-        button.button = MouseButtons.Button_5;
+    MouseButton button;
+    button.button = getButton(msg, wp);
 
     auto pos = lp.extractCursorPos();
     button.posX = pos[0];
