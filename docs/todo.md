@@ -9,7 +9,7 @@ Todo Completion: 12/36 [33.3%]
     - [x] Destroying windows
     - [ ] Callbacks
         - [ ] CloseCallback
-        - [ ] ResizeCallback
+        - [x] ResizeCallback
         - [ ] WindowModeCallback
         - [ ] WindowMoveCallback
     - [ ] Window modes
@@ -20,6 +20,8 @@ Todo Completion: 12/36 [33.3%]
         - [ ] Fullscreen window
         - [ ] Always-on-top window
     - [ ] Resizing the window
+        - [x] User-side (click-and-drag)
+        - [ ] Code-side
     - [x] Win32 specifics
         - [x] Creating window with owned device context (for graphics APIs)
     - [ ] Set icon
