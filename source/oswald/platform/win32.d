@@ -46,12 +46,17 @@ struct Win32WindowData
     if (tmpTitle == null)
         return WindowError.TitleTooLong;
 
+    DWORD style = WS_OVERLAPPEDWINDOW;
+    
+    if (!config.resizeable)
+        style = WS_OVERLAPPEDWINDOW ^ WS_SIZEBOX;
+
     //dfmt off
     HWND hwnd = CreateWindowExW(
         0,                              //Optional window styles
         &wndclassName[0],               //The name of the window class
         tmpTitle,                       //The name of the window
-        WS_OVERLAPPEDWINDOW,            //Window Style
+        style,                          //Window Style
         CW_USEDEFAULT, CW_USEDEFAULT,   //(x, y) positions of the window
         config.width, config.height,    //The width and height of the window
         null,                           //Parent window

@@ -25,17 +25,6 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
 
     switch (msg)
     {
-    case WM_CLOSE:
-
-        window.isCloseRequested = true;
-        return 0;
-
-    case WM_DESTROY:
-        assert(hwnd !is null);
-
-        PostQuitMessage(0);
-        return 0;
-
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
@@ -76,6 +65,25 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
         if (window.input.scrollCallback)
             assumeWontThrow(window.input.scrollCallback(window, lines));
 
+        return 0;
+    
+    case WM_SIZE:
+        win32ProcessSizeChange(window, wp, lp);
+
+        if (window.resizeCallback)
+            assumeWontThrow(window.resizeCallback(window, window._width, window._height));
+
+        return 0;
+
+    case WM_CLOSE:
+
+        window.isCloseRequested = true;
+        return 0;
+
+    case WM_DESTROY:
+        assert(hwnd !is null);
+
+        PostQuitMessage(0);
         return 0;
 
     default:
@@ -217,6 +225,12 @@ MouseButton win32ProcessMouseButton(uint msg, WPARAM wp, LPARAM lp) nothrow
     button.state = isButtonDown(msg) ? MouseButtonState.Pressed : MouseButtonState.Released;
 
     return button;
+}
+
+void win32ProcessSizeChange(OsWindow* window, WPARAM wp, LPARAM lp) nothrow
+{
+    window._height = HIWORD(lp);
+    window._width = LOWORD(lp);
 }
 
 /**

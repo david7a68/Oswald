@@ -4,6 +4,8 @@ import oswald.errors : WindowError;
 
 enum maxTitleLength = 1024;
 
+alias WindowResizeCallback = void function(OsWindow*, short, short);
+
 struct WindowConfig
 {
     string title;
@@ -11,6 +13,7 @@ struct WindowConfig
     ushort width;
     ushort height;
     bool hidden;
+    bool resizeable;
 }
 
 struct OsWindow
@@ -68,12 +71,17 @@ struct OsWindow
         platformHideWindow(_platformData);
     }
 
+    WindowResizeCallback resizeCallback;
+
 package(oswald):
 
     @property void isCloseRequested(bool icr)
     {
         _isCloseRequested = icr;
     }
+
+    ushort _width;
+    ushort _height;
 
 private:
     PlatformWindowData _platformData;
