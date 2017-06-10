@@ -6,8 +6,9 @@ void main()
 	import std.typecons: Yes, No;
 
 	auto config = WindowConfig("Hello world!", 1280, 720, false);
-	auto window = new Window(config);
-
+	OsWindow window;
+	OsWindow.createNew(config, &window);
+	
 	while (!window.isCloseRequested)
 	{
 		window.input.process(Yes.waitEvents);
