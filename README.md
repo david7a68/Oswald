@@ -1,8 +1,8 @@
 # OS Window Abstraction Library in D (OSWALD)
 
-Oswald is a simple window abstraction library that is intended for cross-platform use. It is designed as a relatively low-level library, that other graphics or UI libraries can build off of.
+Oswald is a simple window abstraction library that is intended for cross-platform use. It is designed as a relatively low-level library, that other graphics or UI libraries can build off of. Oswald does not dynamically allocate memory, and returns error codes instead of throwing exceptions.
 
-Oswald does not (and will not) support the creationg of graphics contexts, or other similar tasks. For a library that creates and manages graphics contexts, please direct yourself to GLFW (glfw.org), SDL (libsdl.org), or SFML (sfml-dev.org).
+Oswald does not (and will not) support the creationg of graphics contexts, or other similar tasks. For a library that creates and manages graphics contexts, please direct yourself to GLFW (glfw.org), SDL (libsdl.org), or SFML (sfml-dev.org). Note that neither of these libraries are compatible with Oswald.
 
 Please see the `examples` directory for how to use the library.
 
