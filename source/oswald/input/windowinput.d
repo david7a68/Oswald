@@ -28,9 +28,9 @@ struct WindowInput
 
 @safe @nogc nothrow:
 
-    void process(Flag!"waitEvents" waitEvents)
+    void process(Flag!"waitForEvents" waitForEvents)
     {
-        platformProcessEvents(waitEvents, _window.platformData);
+        platformProcessEvents(waitForEvents, _window.platformData);
     }
 
     @property Key[] keys()

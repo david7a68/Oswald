@@ -1,6 +1,10 @@
 module oswald.platform.win32;
 
-version (Windows)  : import core.sys.windows.windows;
+//dfmt off
+version (Windows) :
+//dfmt on
+
+import core.sys.windows.windows;
 import std.typecons : Flag;
 import oswald.errors : WindowError;
 import oswald.window : OsWindow, WindowConfig;
@@ -104,7 +108,7 @@ alias win32HideWindow = win32SetWindowMode!SW_HIDE;
     return WindowError.NoError;
 }
 
-@trusted void win32ProcessEvents(Flag!"waitEvents" waitEvents, Win32WindowData context)
+@trusted void win32ProcessEvents(Flag!"waitForEvents" waitEvents, Win32WindowData context)
 {
     MSG msg;
 
