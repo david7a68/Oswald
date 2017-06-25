@@ -59,6 +59,21 @@ struct OsWindow
         platformSetTitle(_platformData, newTitle);
     }
 
+    @property void* userData()
+    {
+        return _userData;
+    }
+
+    @property void userData(void* userData)
+    {
+        _userData = userData;
+    }
+
+    @trusted @property void userData(T)(T t) if (is(T == class))
+    {
+        _userData = cast(void*) t;
+    }
+
     version (Windows) alias win32 = platformData;
 
     void show()
@@ -87,5 +102,6 @@ private:
     PlatformWindowData _platformData;
     WindowInput _input;
 
+    void* _userData;
     bool _isCloseRequested;
 }
