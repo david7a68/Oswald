@@ -12,7 +12,7 @@ static immutable platformFunctions = [
 
     "SetTitle",
 
-    "ProcessEvents"
+    // "ProcessEvents"
 ];
 
 static immutable platformConstants = [
@@ -30,6 +30,9 @@ version (Windows)
 
     enum functionPrefix = "win32";
     enum typePrefix = "Win32";
+
+    //Wierd alias issue. Compiler error without this when building external projects
+    alias platformProcessEvents = win32ProcessEvents;
 
     alias PlatformWindowData = Win32WindowData;
 }
