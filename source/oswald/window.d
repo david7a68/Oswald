@@ -13,7 +13,7 @@ struct WindowConfig
     ushort width;
     ushort height;
     bool hidden;
-    bool resizeable;
+    bool resizeable = true;
 }
 
 struct OsWindow

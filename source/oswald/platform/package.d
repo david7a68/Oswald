@@ -37,17 +37,17 @@ version (Windows)
     alias PlatformWindowData = Win32WindowData;
 }
 
-mixin(genPlatformAlias!"platform"(platformFunctions, functionPrefix));
-mixin(genPlatformAlias!"platform"(platformConstants, functionPrefix));
+mixin(genPlatformAlias!("platform", functionPrefix)(platformFunctions));
+mixin(genPlatformAlias!("platform", functionPrefix)(platformConstants));
 
 private:
 
-string genPlatformAlias(string aliasPrefix)(in string[] names, in string prefix)
+string genPlatformAlias(string aliasPrefix, string platformPrefix)(in string[] names)
 {
     string result;
 
     foreach(name; names)
-        result ~= "alias " ~ aliasPrefix ~ name ~ " = " ~ prefix ~ name ~ ";";
+        result ~= "alias " ~ aliasPrefix ~ name ~ " = " ~ platformPrefix ~ name ~ ";";
 
     return result;
 }

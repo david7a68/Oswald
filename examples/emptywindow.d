@@ -1,3 +1,5 @@
+module oswald.examples.emptywindow;
+
 import std.stdio;
 
 void main()
