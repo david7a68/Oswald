@@ -53,7 +53,7 @@ struct Win32WindowData
     DWORD style = WS_OVERLAPPEDWINDOW;
     
     if (!config.resizeable)
-        style = WS_OVERLAPPEDWINDOW ^ WS_SIZEBOX;
+        style ^= WS_SIZEBOX;
 
     //dfmt off
     HWND hwnd = CreateWindowExW(

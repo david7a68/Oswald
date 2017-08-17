@@ -76,6 +76,11 @@ struct OsWindow
 
     version (Windows) alias win32 = platformData;
 
+    void close()
+    {
+        isCloseRequested = true;
+    }
+
     void show()
     {
         platformShowWindow(_platformData);
