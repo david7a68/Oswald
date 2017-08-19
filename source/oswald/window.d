@@ -18,7 +18,7 @@ struct WindowConfig
 
 struct OsWindow
 {
-    @safe @nogc nothrow:
+@safe @nogc nothrow:
 
     import oswald.platform;
     import oswald.input : WindowInput;
@@ -35,43 +35,57 @@ struct OsWindow
         platformDestroyWindow(_platformData);
     }
 
-    /**
-     * `true` if a request to close the window was made, `false`
-     * otherwise.
-     */
-    @property bool isCloseRequested() const
+    @property
     {
-        return _isCloseRequested;
-    }
 
-    @property PlatformWindowData platformData()
-    {
-        return _platformData;
-    }
+        /**
+        * `true` if a request to close the window was made, `false`
+        * otherwise.
+        */
+        bool isCloseRequested() const
+        {
+            return _isCloseRequested;
+        }
 
-    @property ref WindowInput input()
-    {
-        return _input;
-    }
+        PlatformWindowData platformData()
+        {
+            return _platformData;
+        }
 
-    @property void title(string newTitle)
-    {
-        platformSetTitle(_platformData, newTitle);
-    }
+        ref WindowInput input()
+        {
+            return _input;
+        }
 
-    @property void* userData()
-    {
-        return _userData;
-    }
+        void title(string newTitle)
+        {
+            platformSetTitle(_platformData, newTitle);
+        }
 
-    @property void userData(void* userData)
-    {
-        _userData = userData;
-    }
+        void* userData()
+        {
+            return _userData;
+        }
 
-    @trusted @property void userData(T)(T t) if (is(T == class))
-    {
-        _userData = cast(void*) t;
+        void userData(void* userData)
+        {
+            _userData = userData;
+        }
+
+        @trusted void userData(T)(T t) if (is(T == class))
+        {
+            _userData = cast(void*) t;
+        }
+
+        ushort width()
+        {
+            return _width;
+        }
+
+        ushort height()
+        {
+            return _height;
+        }
     }
 
     version (Windows) alias win32 = platformData;
