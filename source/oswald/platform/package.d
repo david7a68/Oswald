@@ -12,7 +12,7 @@ static immutable platformFunctions = [
 
     "SetTitle",
 
-    // "ProcessEvents"
+    "ResizeWindow"
 ];
 
 static immutable platformConstants = [

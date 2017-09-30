@@ -1,6 +1,8 @@
+This document is just some information to guide the development of Oswald.
+
 # Raison d'etre (Why a new window library?)
 - D does not have a low-level windowing library currently available.
-- Oswald avoid dynamically allocating memory, unlike many other libraries.
+- Oswald avoids dynamically allocating memory, unlike many other libraries.
 - This was (and continues to be) a learning opportunity.
 
 # Library Structure

@@ -108,6 +108,16 @@ alias win32HideWindow = win32SetWindowMode!SW_HIDE;
     return WindowError.NoError;
 }
 
+@trusted WindowError win32ResizeWindow(Win32WindowData context, ushort newWidth, ushort newHeight)
+{
+    RECT rect;
+    GetWindowRect(context.handle, &rect);
+
+    auto err = MoveWindow(context.handle, rect.left, rect.top, newWidth, newHeight, TRUE);
+
+    return WindowError.NoError;
+}
+
 @trusted void win32ProcessEvents(Flag!"waitForEvents" waitEvents, Win32WindowData context)
 {
     MSG msg;

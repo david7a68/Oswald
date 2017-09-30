@@ -5,6 +5,7 @@ public:
 import oswald.errors: WindowError;
 
 import oswald.window: OsWindow;
+import oswald.window: Window;
 import oswald.window: WindowConfig;
 import oswald.window: maxTitleLength;
 
