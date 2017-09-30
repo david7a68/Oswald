@@ -8,11 +8,11 @@ Please see the `examples` directory for how to use the library.
 
 Unfortunately, source documentation in Oswald is a bit scarce, but is being actively improved.
 
-###Note:
+### Note:
 
 This library is being improved as I see the need for my own projects. If there is any feature that you would like to see, please do let me know!
 
-##Features under consideration:
+## Features under consideration:
 
 - [x] Object interface for windows
 - [ ] Statically configurable error handling behavior
