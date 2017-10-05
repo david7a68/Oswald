@@ -118,11 +118,11 @@ alias win32HideWindow = win32SetWindowMode!SW_HIDE;
     return WindowError.NoError;
 }
 
-@trusted void win32ProcessEvents(Flag!"waitForEvents" waitEvents, Win32WindowData context)
+@trusted void win32ProcessEvents(Flag!"waitForEvents" waitForEvents, Win32WindowData context)
 {
     MSG msg;
 
-    if (waitEvents)
+    if (waitForEvents)
     {
         const quit = GetMessageW(&msg, context.handle, 0, 0);
 
@@ -134,6 +134,27 @@ alias win32HideWindow = win32SetWindowMode!SW_HIDE;
     }
 
     while (PeekMessageW(&msg, context.handle, 0, 0, PM_REMOVE))
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+}
+
+@trusted void win32ProcessEvents(Flag!"waitForEvents" waitForEvents)
+{ //Global process events
+    MSG msg;
+
+    if (waitForEvents)
+    {
+        const quit = GetMessageW(&msg, null, 0, 0);
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+
+        if (quit == 0)
+            return;
+    }
+
+    while (PeekMessageW(&msg, null, 0, 0, PM_REMOVE))
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);

@@ -76,7 +76,6 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
         return 0;
 
     case WM_CLOSE:
-
         window.isCloseRequested = true;
         return 0;
 
