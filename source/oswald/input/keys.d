@@ -180,9 +180,9 @@ enum numSupportedKeys = EnumMembers!(Keycodes).length;
 
 enum KeyState: ubyte
 {
+    Released,
     Pressed,
     Held,
-    Released
 }
 
 struct Key

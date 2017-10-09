@@ -13,7 +13,7 @@ import oswald.input: Key, Keycodes, KeyState;
 import oswald.input: numSupportedKeys;
 
 import oswald.input: Cursor;
-import oswald.input: MouseButton, MouseButtons, MouseButtonState;
+import oswald.input: Mouse, MouseButton, MouseButtons, MouseButtonState;
 import oswald.input: numSupportedMouseButtons;
 
 import oswald.input: WindowInput;

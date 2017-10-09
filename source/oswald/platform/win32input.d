@@ -45,34 +45,35 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
     case WM_XBUTTONDOWN:
     case WM_XBUTTONUP:
         MouseButton button = win32ProcessMouseButton(msg, wp, lp);
+        window.input.dispatch!"mouseButtonCallback"(window, button);
+        return 0;
 
-        if (window.input.mouseButtonCallback)
-            assumeWontThrow(window.input.mouseButtonCallback(window, button));
-
+    case WM_MOUSELEAVE:
+        window.cursorIsInWindow = false;
+        window.input.dispatch!"cursorExitCallback"(window, *window.input.cursor);
         return 0;
 
     case WM_MOUSEMOVE:
         auto cursor = win32ProcessCursorMove(window.input, wp, lp);
 
-        if (window.input.cursorCallback)
-            assumeWontThrow(window.input.cursorCallback(window, cursor));
+        if (!window.cursorIsInWindow)
+        {
+            window.cursorIsInWindow = true;
+            requestMouseTracking(hwnd);
+            window.input.dispatch!"cursorEnterCallback"(window, cursor);
+        }
 
+        window.input.dispatch!"cursorMoveCallback"(window, cursor);
         return 0;
 
     case WM_MOUSEWHEEL:
         auto lines = win32ProcessScrollLines(window.input, wp, lp);
-
-        if (window.input.scrollCallback)
-            assumeWontThrow(window.input.scrollCallback(window, lines));
-
+        window.input.dispatch!"scrollCallback"(window, lines);
         return 0;
     
     case WM_SIZE:
         win32ProcessSizeChange(window, wp, lp);
-
-        if (window.resizeCallback)
-            assumeWontThrow(window.resizeCallback(window, window._width, window._height));
-
+        window.dispatch!"resizeCallback"(window, window.width, window.height);
         return 0;
 
     case WM_CLOSE:
@@ -110,6 +111,17 @@ auto extractCursorPos(LPARAM lp) nothrow
     const splitter = Splitter(lp);
 
     return tuple(splitter.x, splitter.y);
+}
+
+void requestMouseTracking(HWND hwnd) nothrow
+{
+    TRACKMOUSEEVENT tme;
+    tme.cbSize = tme.sizeof;
+    tme.dwFlags = TME_LEAVE | TME_HOVER;
+    tme.hwndTrack = hwnd;
+    tme.dwHoverTime = HOVER_DEFAULT;
+
+    TrackMouseEvent(&tme);
 }
 
 Key win32ProcessKeyEvent(WPARAM wp, LPARAM lp) nothrow
@@ -153,11 +165,12 @@ Cursor win32ProcessCursorMove(ref WindowInput input, WPARAM wp, LPARAM lp) nothr
 {
     void updateMouseButtons(ref WindowInput input, short x, short y)
     {
-        foreach (ref button; input.mouseButtons)
+        auto mouse = input.mouse;
+        foreach (ref button; mouse.buttons)
         {
             if (button.state == MouseButtonState.Pressed)
             {
-                const cursorMoved = (button.posX == x) && (button.posY == y);
+                const cursorMoved = (mouse.x == x) && (mouse.y == y);
                 if (cursorMoved)
                     button.state = MouseButtonState.Dragged;
                 else
@@ -176,8 +189,10 @@ Cursor win32ProcessCursorMove(ref WindowInput input, WPARAM wp, LPARAM lp) nothr
     cursor.y = pos[1];
 
     updateMouseButtons(input, cursor.x, cursor.y);
+    input.mouse.lastX = cursor.oldX;
+    input.mouse.lastY = cursor.oldY;
 
-    return cursor;
+    return *cursor;
 }
 
 MouseButton win32ProcessMouseButton(uint msg, WPARAM wp, LPARAM lp) nothrow
@@ -216,10 +231,6 @@ MouseButton win32ProcessMouseButton(uint msg, WPARAM wp, LPARAM lp) nothrow
 
     MouseButton button;
     button.button = getButton(msg, wp);
-
-    auto pos = lp.extractCursorPos();
-    button.posX = pos[0];
-    button.posY = pos[1];
 
     button.state = isButtonDown(msg) ? MouseButtonState.Pressed : MouseButtonState.Released;
 

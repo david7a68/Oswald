@@ -18,11 +18,18 @@ struct WindowConfig
 
 struct OsWindow
 {
-@safe @nogc nothrow:
-
     import oswald.platform;
     import oswald.input : WindowInput;
 
+    package(oswald)
+    void dispatch(string callback, Args...)(Args args) nothrow
+    {
+        import std.exception: assumeWontThrow;
+
+        mixin("if (" ~ callback ~ ") assumeWontThrow(" ~ callback ~ " (args));");
+    }
+
+@safe @nogc nothrow:
     static WindowError createNew(WindowConfig config, OsWindow* destination)
     {
         auto error = platformCreateWindow(config, destination._platformData, destination);
@@ -35,65 +42,41 @@ struct OsWindow
         platformDestroyWindow(_platformData);
     }
 
+    //dfmt off
     @property
     {
         /**
         * `true` if a request to close the window was made, `false`
         * otherwise.
         */
-        bool isCloseRequested() const
-        {
-            return _isCloseRequested;
-        }
+        bool isCloseRequested() const { return _isCloseRequested; }
+
+        bool cursorIsInWindow() const { return _cursorIsInWindow; }
 
         ///Platform specific information about the window
-        PlatformWindowData platformData()
-        {
-            return _platformData;
-        }
+        inout(PlatformWindowData) platformData() inout { return _platformData; }
 
         ///The input processor
-        ref WindowInput input()
-        {
-            return _input;
-        }
+        ref WindowInput input() { return _input; }
 
         ///Sets the title to `newTitle`
-        void title(string newTitle)
-        {
-            platformSetTitle(_platformData, newTitle);
-        }
+        void title(string newTitle) { platformSetTitle(_platformData, newTitle); }
 
         ///User defined information that will be available
         ///to any callbacks originating from the window.
-        void* userData()
-        {
-            return _userData;
-        }
+        void* userData() { return _userData; }
 
         ///Ditto
-        void userData(void* userData)
-        {
-            _userData = userData;
-        }
+        void userData(void* userData) { _userData = userData; }
 
         ///Ditto
-        @trusted void userData(T)(T t) if (is(T == class))
-        {
-            _userData = cast(void*) t;
-        }
+        @trusted void userData(T)(T t) if (is(T == class)) { _userData = cast(void*) t; }
 
         ///The width of the window
-        ushort width()
-        {
-            return _width;
-        }
+        const ushort width() { return _width; }
 
         ///The height of the window
-        ushort height()
-        {
-            return _height;
-        }
+        const ushort height() { return _height; }
     }
 
     version (Windows) alias win32 = platformData;
@@ -127,6 +110,11 @@ package(oswald):
         _isCloseRequested = icr;
     }
 
+    @property void cursorIsInWindow(bool ciin)
+    {
+        _cursorIsInWindow = ciin;
+    }
+
     ushort _width;
     ushort _height;
 
@@ -136,6 +124,7 @@ private:
 
     void* _userData;
     bool _isCloseRequested;
+    bool _cursorIsInWindow;
 }
 
 class Window

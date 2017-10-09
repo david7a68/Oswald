@@ -28,7 +28,7 @@ Todo Completion: 12/36 [33.3%]
     - [x] Set title
     - [ ] Set cursor bitmap
     - [ ] Create window on specific monitor?
-    - [ ] Set user pointer (for custom data)
+    - [x] Set user pointer (for custom data)
     - [ ] Changing focus
     - [ ] Clipboard support
 - [ ] WindowInput
@@ -36,8 +36,9 @@ Todo Completion: 12/36 [33.3%]
     - [ ] Callbacks
         - [x] KeyCallback
         - [x] CursorCallback
-        - [ ] CursorEnterCallback
-        - [ ] CursorLeaveCallback
+        - [x] CursorEnterCallback
+        - [x] CursorLeaveCallback
+        - [ ] CursorHoverCallback
         - [x] MouseClickCallback
         - [x] ScrollCallback
     - [x] Enable querying key state

@@ -20,7 +20,6 @@ static immutable uint win32ScrollLines;
 struct Win32WindowData
 {
     HWND handle;
-    HDC hdc;
 }
 
 @trusted static this()
@@ -74,7 +73,6 @@ struct Win32WindowData
         return WindowError.WindowConstructionFailed;
 
     window.handle = hwnd;
-    window.hdc = GetDC(hwnd);
     SetPropW(hwnd, windowHandlePropertyName.ptr, statePtr);
 
     if (!config.hidden)

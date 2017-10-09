@@ -45,7 +45,6 @@ struct ClickModifiers
 
 struct MouseButton
 {
-    short posX, posY;
     MouseButtonState state;
     MouseButtons button;
     ClickModifiers modifiers;
@@ -54,6 +53,19 @@ struct MouseButton
     {
         return state == MouseButtonState.Pressed;
     }
+}
+
+struct Mouse
+{
+    short x, y;
+    short lastX, lastY;
+    MouseButton[numSupportedMouseButtons] buttons;
+
+    //dfmt off
+    const @property leftMouseButton() { return buttons[MouseButtons.Left]; }
+    const @property rightMouseButton() { return buttons[MouseButtons.Right]; }
+    const @property middleMouseButton() { return buttons[MouseButtons.Middle]; }
+    //dfmt on
 }
 
 struct Cursor

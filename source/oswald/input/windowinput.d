@@ -3,13 +3,15 @@ module oswald.input.windowinput;
 import std.typecons : Flag;
 
 import oswald.window : OsWindow;
-import oswald.input : Cursor, MouseButton, Key, Keycodes;
+import oswald.input : Cursor, MouseButton, Key, Keycodes, Mouse;
 import oswald.input : numSupportedMouseButtons;
 
 alias KeyCallback = void function(OsWindow* window, Key key);
 alias ScrollCallback = void function(OsWindow* window, float scroll);
 alias CursorMoveCallback = void function(OsWindow* window, Cursor cursor);
 alias MouseButtonCallback = void function(OsWindow* window, MouseButton mouse);
+alias CursorExitCallback = void function(OsWindow*, Cursor);
+alias CursorEnterCallback = void function(OsWindow*, Cursor);
 
 /**
  * `WindowInput` handles the processing of window-specific input.
@@ -25,6 +27,14 @@ struct WindowInput
 {
     import oswald.window : OsWindow;
     import oswald.platform : platformProcessEvents;
+    
+    package(oswald)
+    void dispatch(string callback, Args...)(Args args) nothrow
+    {
+        import std.exception: assumeWontThrow;
+
+        mixin("if (" ~ callback ~ ") assumeWontThrow(" ~ callback ~ " (args));");
+    }
 
 @safe @nogc nothrow:
 
@@ -33,14 +43,31 @@ struct WindowInput
         platformProcessEvents(waitForEvents, _window.platformData);
     }
 
-    @property Key[] keys()
+    nothrow @property
     {
-        return _keys;
+        Key[] keys()
+        {
+            return _keys;
+        }
+
+        Mouse* mouse()
+        {
+            return &_mouse;
+        }
+
+        Cursor* cursor()
+        {
+            return &_cursor;
+        }
     }
 
     KeyCallback keyCallback;
 
-    CursorMoveCallback cursorCallback;
+    CursorMoveCallback cursorMoveCallback;
+
+    CursorExitCallback cursorExitCallback;
+
+    CursorEnterCallback cursorEnterCallback;
 
     MouseButtonCallback mouseButtonCallback;
 
@@ -52,22 +79,10 @@ package(oswald):
         _window = window;
     }
 
-    @property
-    {
-        ref Cursor cursor()
-        {
-            return _cursor;
-        }
-
-        MouseButton[] mouseButtons()
-        {
-            return _mouseButtons;
-        }
-    }
 private:
     OsWindow* _window;
 
     Cursor _cursor;
-    MouseButton[numSupportedMouseButtons] _mouseButtons;
+    Mouse _mouse;
     Key[256] _keys;
 }
