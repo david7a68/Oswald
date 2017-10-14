@@ -5,6 +5,7 @@ import oswald.errors : WindowError;
 enum maxTitleLength = 1024;
 
 alias WindowResizeCallback = void function(OsWindow*, short, short);
+alias WindowDrawCallback = void function(OsWindow*);
 
 struct WindowConfig
 {
@@ -83,7 +84,7 @@ struct OsWindow
 
     void close()
     {
-        isCloseRequested = true;
+        platformCloseWindow(_platformData);
     }
 
     void show()
@@ -102,6 +103,7 @@ struct OsWindow
     }
 
     WindowResizeCallback resizeCallback;
+    WindowDrawCallback drawCallback;
 
 package(oswald):
 

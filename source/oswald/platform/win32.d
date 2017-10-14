@@ -86,6 +86,13 @@ struct Win32WindowData
     DestroyWindow(context.handle);
 }
 
+@trusted void win32CloseWindow(Win32WindowData context)
+{
+    auto err = PostMessage(context.handle, WM_CLOSE, 0, 0);
+
+    assert(err != 0, "PostMessage(WM_CLOSE) failed");
+}
+
 alias win32ShowWindow = win32SetWindowMode!SW_SHOW;
 alias win32HideWindow = win32SetWindowMode!SW_HIDE;
 
@@ -123,6 +130,7 @@ alias win32HideWindow = win32SetWindowMode!SW_HIDE;
     if (waitForEvents)
     {
         const quit = GetMessageW(&msg, context.handle, 0, 0);
+        assert(quit != -1, "GetMessage returned -1");
 
         TranslateMessage(&msg);
         DispatchMessage(&msg);
@@ -131,7 +139,7 @@ alias win32HideWindow = win32SetWindowMode!SW_HIDE;
             return;
     }
 
-    while (PeekMessageW(&msg, context.handle, 0, 0, PM_REMOVE))
+    while (PeekMessage(&msg, context.handle, 0, 0, PM_REMOVE) != 0)
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);

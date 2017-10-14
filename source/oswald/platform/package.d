@@ -6,6 +6,7 @@ enum platformPageScroll = uint.max;
 static immutable platformFunctions = [
     "CreateWindow",
     "DestroyWindow",
+    "CloseWindow",
 
     "ShowWindow",
     "HideWindow",

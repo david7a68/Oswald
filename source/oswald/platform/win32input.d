@@ -16,8 +16,6 @@ import oswald.platform.win32 : win32GetStatePointer;
  */
 extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) nothrow
 {
-    import std.exception : assumeWontThrow;
-
     auto window = win32GetStatePointer(hwnd);
 
     if (window is null)
@@ -30,12 +28,26 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
     case WM_KEYUP:
     case WM_SYSKEYUP:
         Key key = win32ProcessKeyEvent(wp, lp);
-        const isInvalidKey = key.keycode == Keycodes.Invalid;
 
-        if (!isInvalidKey && window.input.keyCallback)
-            assumeWontThrow(window.input.keyCallback(window, key));
+        if (key.keycode == Keycodes.Invalid)
+            return 0;
+        
+        window.input.keys[key.keycode] = key;
+        window.input.dispatch!"keyCallback"(window, key);
+
         return 0;
 
+    case WM_PAINT:
+        //This weirdness is required to keep windows from
+        //telling our program to 'try harder' and resending
+        //the WM_PAINT message.
+        PAINTSTRUCT ps;
+        if (BeginPaint(hwnd, &ps))
+            EndPaint(hwnd, &ps);
+        window.dispatch!"drawCallback"(window);
+
+        return 0;
+        
     case WM_LBUTTONDOWN:
     case WM_LBUTTONUP:
     case WM_MBUTTONDOWN:
