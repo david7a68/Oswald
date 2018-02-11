@@ -15,7 +15,10 @@ import oswald.platform : platformPageScroll;
 
 pragma(lib, "user32");
 
-static immutable uint win32ScrollLines;
+private immutable wndclassName = "oswald_win32_wndclass\0"w;
+private immutable windowHandlePropertyName = "OSWALD_WINDOW\0"w;
+
+immutable uint win32ScrollLines;
 
 struct Win32WindowData
 {
@@ -30,7 +33,9 @@ struct Win32WindowData
     wc.lpfnWndProc = &windowProc;
     wc.hInstance = GetModuleHandle(null);
     wc.lpszClassName = &wndclassName[0];
-    RegisterClassExW(&wc);
+
+    auto err = RegisterClassExW(&wc);
+    assert(err != 0, "Failed to register window class");
 
     uint lines;
     SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &lines, 0);
@@ -44,6 +49,8 @@ struct Win32WindowData
 @trusted WindowError win32CreateWindow(in WindowConfig config,
         ref Win32WindowData window, void* statePtr)
 {
+    assert(GetLastError() == 0);
+
     auto tmpTitle = getTitleAsNativeString(config.title);
 
     if (tmpTitle == null)
@@ -51,23 +58,26 @@ struct Win32WindowData
 
     DWORD style = WS_OVERLAPPEDWINDOW;
     
-    if (!config.resizeable)
-        style ^= WS_SIZEBOX;
+    // if (!config.resizeable)
+    //     style ^= WS_SIZEBOX;
 
     //dfmt off
     HWND hwnd = CreateWindowExW(
-        0,                              //Optional window styles
+        0,                              //Extended style flags
         &wndclassName[0],               //The name of the window class
         tmpTitle,                       //The name of the window
-        style,                          //Window Style
+        WS_OVERLAPPEDWINDOW,                          //Window Style
         CW_USEDEFAULT, CW_USEDEFAULT,   //(x, y) positions of the window
-        config.width, config.height,    //The width and height of the window
-        null,                           //Parent window
-        null,                           //Menu
-        GetModuleHandle(null),          //hInstance handle
-        null
+        // config.width, config.height,    //The width and height of the window
+        CW_USEDEFAULT, CW_USEDEFAULT,
+        NULL,                           //Parent window
+        NULL,                           //Menu
+        GetModuleHandleW(NULL),          //hInstance handle
+        NULL
     );
     //dfmt on
+
+    // assert(GetLastError == 0);
 
     if (hwnd == null)
         return WindowError.WindowConstructionFailed;
@@ -129,6 +139,7 @@ alias win32HideWindow = win32SetWindowMode!SW_HIDE;
 
     if (waitForEvents)
     {
+        import std.conv;
         const quit = GetMessageW(&msg, context.handle, 0, 0);
         assert(quit != -1, "GetMessage returned -1");
 
@@ -175,9 +186,6 @@ package:
 }
 
 private:
-
-static immutable wndclassName = "viewport_win32_wndclass_name"w;
-static immutable windowHandlePropertyName = "OSWALD_WINDOW"w;
 
 @safe @nogc wchar* getTitleAsNativeString(string title) nothrow
 {
