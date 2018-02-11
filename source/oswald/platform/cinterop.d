@@ -17,26 +17,31 @@ import std.traits: isSomeChar;
  * Returns: null if the buffer is not large enough for the string, else a
  *          pointer to the buffer;
  */
-Char* tempCString(size_t buffSize, Char)(string str) if (isSomeChar!Char)
+template tempCString(size_t buffSize, Char) if (isSomeChar!Char)
 {
-    import std.utf : byUTF;
+    private Char[buffSize] tempCharBuffer;
 
-    static Char[buffSize] buffer;
-
-    size_t index;
-    auto range = str.byUTF!Char();
-
-    while (!range.empty && index < buffer.length)
+    Char* tempCString(string str)
     {
-        buffer[index] = range.front;
-        range.popFront();
-        index++;
+        import std.utf : byUTF;
+
+        static Char[buffSize] buffer;
+
+        buffer[] = '\0';
+
+        size_t index;
+        auto range = str.byUTF!Char();
+
+        while (!range.empty && index < buffer.length)
+        {
+            buffer[index] = range.front;
+            range.popFront();
+            index++;
+        }
+
+        if (index == buffer.length)
+            return null;
+
+        return &buffer[0];
     }
-
-    if (index == buffer.length)
-        return null;
-
-    buffer[index] = '\0';
-
-    return &buffer[0];
 }
