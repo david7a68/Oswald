@@ -14,15 +14,13 @@ import oswald.platform.win32 : win32GetStatePointer;
  * The windowProc is solely responsible for delegating events to their
  * appropriate handlers, and does minimal processing itself.
  */
-extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) nothrow
-{
+extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) nothrow {
     auto window = win32GetStatePointer(hwnd);
 
     if (window is null)
         return DefWindowProc(hwnd, msg, wp, lp);
 
-    switch (msg)
-    {
+    switch (msg) {
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
@@ -30,17 +28,16 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
         Key key = win32ProcessKeyEvent(wp, lp);
 
         if (key.keycode == Keycodes.Invalid)
-            return 0;
+            break;
         
         window.input.keys[key.keycode] = key;
         window.input.dispatch!"keyCallback"(window, key);
 
-        return 0;
+        break;
 
     case WM_PAINT:
         window.dispatch!"drawCallback"(window);
-
-        return 0;
+        break;
         
     case WM_LBUTTONDOWN:
     case WM_LBUTTONUP:
@@ -75,7 +72,7 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
     case WM_MOUSEWHEEL:
         auto lines = win32ProcessScrollLines(window.input, wp, lp);
         window.input.dispatch!"scrollCallback"(window, lines);
-        return 0;
+        break;
     
     case WM_SIZE:
         win32ProcessSizeChange(window, wp, lp);
@@ -84,12 +81,6 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
 
     case WM_CLOSE:
         window.isCloseRequested = true;
-        return 0;
-
-    case WM_DESTROY:
-        assert(hwnd !is null);
-
-        PostQuitMessage(0);
         return 0;
 
     default:
@@ -101,15 +92,12 @@ private:
 
 static immutable keyTranslationTable = win32GenKeytranslationTable();
 
-auto extractCursorPos(LPARAM lp) nothrow
-{
+auto extractCursorPos(LPARAM lp) nothrow {
     import std.typecons : tuple;
 
-    union Splitter
-    {
+    union Splitter {
         LPARAM lp;
-        struct
-        {
+        struct {
             short x, y;
         }
     }
@@ -119,8 +107,7 @@ auto extractCursorPos(LPARAM lp) nothrow
     return tuple(splitter.x, splitter.y);
 }
 
-void requestMouseTracking(HWND hwnd) nothrow
-{
+void requestMouseTracking(HWND hwnd) nothrow {
     TRACKMOUSEEVENT tme;
     tme.cbSize = tme.sizeof;
     tme.dwFlags = TME_LEAVE | TME_HOVER;
@@ -130,10 +117,8 @@ void requestMouseTracking(HWND hwnd) nothrow
     TrackMouseEvent(&tme);
 }
 
-Key win32ProcessKeyEvent(WPARAM wp, LPARAM lp) nothrow
-{
-    Keycodes getKeycode(WPARAM wp, LPARAM lp)
-    {
+Key win32ProcessKeyEvent(WPARAM wp, LPARAM lp) nothrow {
+    Keycodes getKeycode(WPARAM wp, LPARAM lp) {
         const isExtendedKey = (lp & 0x01000000);
 
         if (wp == VK_CONTROL)
@@ -156,8 +141,7 @@ Key win32ProcessKeyEvent(WPARAM wp, LPARAM lp) nothrow
     return key;
 }
 
-float win32ProcessScrollLines(ref WindowInput input, WPARAM wp, LPARAM lp) nothrow
-{
+float win32ProcessScrollLines(ref WindowInput input, WPARAM wp, LPARAM lp) nothrow {
     import oswald.platform : platformScrollLines;
 
     auto lines = GET_WHEEL_DELTA_WPARAM(wp);
@@ -167,15 +151,11 @@ float win32ProcessScrollLines(ref WindowInput input, WPARAM wp, LPARAM lp) nothr
     return lines / WHEEL_DELTA;
 }
 
-Cursor win32ProcessCursorMove(ref WindowInput input, WPARAM wp, LPARAM lp) nothrow
-{
-    void updateMouseButtons(ref WindowInput input, short x, short y)
-    {
+Cursor win32ProcessCursorMove(ref WindowInput input, WPARAM wp, LPARAM lp) nothrow {
+    void updateMouseButtons(ref WindowInput input, short x, short y) {
         auto mouse = input.mouse;
-        foreach (ref button; mouse.buttons)
-        {
-            if (button.state == MouseButtonState.Pressed)
-            {
+        foreach (ref button; mouse.buttons) {
+            if (button.state == MouseButtonState.Pressed) {
                 const cursorMoved = (mouse.x == x) && (mouse.y == y);
                 if (cursorMoved)
                     button.state = MouseButtonState.Dragged;
@@ -201,12 +181,9 @@ Cursor win32ProcessCursorMove(ref WindowInput input, WPARAM wp, LPARAM lp) nothr
     return *cursor;
 }
 
-MouseButton win32ProcessMouseButton(uint msg, WPARAM wp, LPARAM lp) nothrow
-{
-    bool isButtonDown(uint msg)
-    {
-        switch (msg)
-        {
+MouseButton win32ProcessMouseButton(uint msg, WPARAM wp, LPARAM lp) nothrow {
+    bool isButtonDown(uint msg) {
+        switch (msg) {
         case WM_LBUTTONDOWN:
         case WM_RBUTTONDOWN:
         case WM_MBUTTONDOWN:
@@ -217,10 +194,8 @@ MouseButton win32ProcessMouseButton(uint msg, WPARAM wp, LPARAM lp) nothrow
         }
     }
 
-    MouseButtons getButton(uint msg, WPARAM wp)
-    {
-        switch (msg)
-        {
+    MouseButtons getButton(uint msg, WPARAM wp) {
+        switch (msg) {
         case WM_LBUTTONDOWN:
         case WM_LBUTTONUP:
             return MouseButtons.Left;
@@ -243,8 +218,7 @@ MouseButton win32ProcessMouseButton(uint msg, WPARAM wp, LPARAM lp) nothrow
     return button;
 }
 
-void win32ProcessSizeChange(OsWindow* window, WPARAM wp, LPARAM lp) nothrow
-{
+void win32ProcessSizeChange(OsWindow* window, WPARAM wp, LPARAM lp) nothrow {
     window._height = HIWORD(lp);
     window._width = LOWORD(lp);
 }
@@ -255,8 +229,7 @@ void win32ProcessSizeChange(OsWindow* window, WPARAM wp, LPARAM lp) nothrow
  Keycodes are generated such that the index of the win32 key holds the
  oswald key code.
  */
-Keycodes[] win32GenKeytranslationTable()
-{
+Keycodes[] win32GenKeytranslationTable() {
     auto result = new Keycodes[](256);
     result[] = Keycodes.Invalid;
 
