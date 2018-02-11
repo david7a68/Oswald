@@ -38,12 +38,6 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
         return 0;
 
     case WM_PAINT:
-        //This weirdness is required to keep windows from
-        //telling our program to 'try harder' and resending
-        //the WM_PAINT message.
-        PAINTSTRUCT ps;
-        if (BeginPaint(hwnd, &ps))
-            EndPaint(hwnd, &ps);
         window.dispatch!"drawCallback"(window);
 
         return 0;
@@ -99,8 +93,8 @@ extern (Windows) LRESULT windowProc(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) n
         return 0;
 
     default:
-        return DefWindowProc(hwnd, msg, wp, lp);
     }
+    return DefWindowProc(hwnd, msg, wp, lp);
 }
 
 private:
