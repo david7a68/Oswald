@@ -1,3 +1,7 @@
+/++ dub.sdl:
+	name "emptywindow"
+	dependency "oswald" path="../"
++/
 module oswald.examples.emptywindow;
 
 import std.stdio;
@@ -9,11 +13,16 @@ void main()
 
 	auto config = WindowConfig("Hello world!", 1280, 720, false);
 	OsWindow window;
-	OsWindow.createNew(config, &window);
+	auto error = OsWindow.createNew(config, &window);
 	
+	if (error != WindowError.NoError)
+	{
+		writeln(error);
+	}
+
 	while (!window.isCloseRequested)
 	{
-		window.input.process(Yes.waitEvents);
+		window.input.process(Yes.waitForEvents);
 	}
 
 	window.destroy();
