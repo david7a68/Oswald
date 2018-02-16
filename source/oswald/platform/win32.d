@@ -49,8 +49,6 @@ struct Win32WindowData
 @trusted WindowError win32CreateWindow(in WindowConfig config,
         ref Win32WindowData window, void* statePtr)
 {
-    assert(GetLastError() == 0);
-
     auto tmpTitle = getTitleAsNativeString(config.title);
 
     if (tmpTitle == null)
@@ -58,8 +56,8 @@ struct Win32WindowData
 
     DWORD style = WS_OVERLAPPEDWINDOW;
     
-    // if (!config.resizeable)
-    //     style ^= WS_SIZEBOX;
+    if (!config.resizeable)
+        style ^= WS_SIZEBOX;
 
     //dfmt off
     HWND hwnd = CreateWindowExW(
@@ -68,17 +66,14 @@ struct Win32WindowData
         tmpTitle,                       //The name of the window
         WS_OVERLAPPEDWINDOW,                          //Window Style
         CW_USEDEFAULT, CW_USEDEFAULT,   //(x, y) positions of the window
-        // config.width, config.height,    //The width and height of the window
-        CW_USEDEFAULT, CW_USEDEFAULT,
+        config.width, config.height,    //The width and height of the window
         NULL,                           //Parent window
         NULL,                           //Menu
         GetModuleHandleW(NULL),          //hInstance handle
         NULL
     );
     //dfmt on
-
-    // assert(GetLastError == 0);
-
+    
     if (hwnd == null)
         return WindowError.WindowConstructionFailed;
 
