@@ -1,8 +1,0 @@
-Notes:
-
-- The files in the "docs" folder is subject to change, and may not reflect
-  the current state of the project.
-- Oswald is currently designed for applications that want to use an external
-  graphics API like OpenGL or DirectX.
-    - In Windows, this means that the window owns a device context, so GDI
-      functions may not work as expected.

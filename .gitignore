@@ -1,4 +1,5 @@
 .dub
+.vs
 bin
 
 docs.json
@@ -6,5 +7,6 @@ __dummy.html
 
 *.o
 *.obj
+*.sln
 
 __test__*__

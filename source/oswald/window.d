@@ -1,186 +1,126 @@
 module oswald.window;
 
-import oswald.errors : WindowError;
+// support both per-window input processing and global input processing
 
-enum maxTitleLength = 1024;
+import oswald.event: OsEventHandler;
+import oswald.platform;
 
-alias WindowResizeCallback = void function(OsWindow*, short, short);
-alias WindowDrawCallback = void function(OsWindow*);
-
-struct WindowConfig
-{
-    string title;
-
-    ushort width;
-    ushort height;
-    bool hidden = false;
-    bool resizeable = true;
+enum CursorIcon : ubyte {
+    /// ⭦
+    Pointer,
+    /// ⌛
+    Wait,
+    /// Ꮖ
+    IBeam,
+    /// ⭤
+    ResizeHorizontal,
+    /// ⭥
+    ResizeVertical,
+    /// ⤡
+    ResizeNorthwestSoutheast,
+    /// ⤢
+    ResizeCornerNortheastSouthwest,
+    /// 
+    UserDefined1 = 128,
+    /// 
+    UserDefined2,
+    /// 
+    UserDefined3,
+    /// 
+    UserDefined4
 }
 
-struct OsWindow
-{
-    import oswald.platform;
-    import oswald.input : WindowInput;
-
-    package(oswald)
-    void dispatch(string callback, Args...)(Args args) nothrow
-    {
-        import std.exception: assumeWontThrow;
-
-        mixin("if (" ~ callback ~ ") assumeWontThrow(" ~ callback ~ " (args));");
-    }
-
-@safe @nogc nothrow:
-    static WindowError createNew(WindowConfig config, OsWindow* destination)
-    {
-        auto error = platformCreateWindow(config, destination._platformData, destination);
-        destination.input = WindowInput(destination);
-        return error;
-    }
-
-    ~this()
-    {
-        platformDestroyWindow(_platformData);
-    }
-
-    //dfmt off
-    @property
-    {
-        /**
-        * `true` if a request to close the window was made, `false`
-        * otherwise.
-        */
-        bool isCloseRequested() const { return _isCloseRequested; }
-
-        bool cursorIsInWindow() const { return _cursorIsInWindow; }
-
-        ///Platform specific information about the window
-        inout(PlatformWindowData) platformData() inout { return _platformData; }
-
-        ///The input processor
-        ref WindowInput input() { return _input; }
-
-        ///Sets the title to `newTitle`
-        void title(string newTitle) { platformSetTitle(_platformData, newTitle); }
-
-        ///User defined information that will be available
-        ///to any callbacks originating from the window.
-        void* userData() { return _userData; }
-
-        ///Ditto
-        void userData(void* userData) { _userData = userData; }
-
-        ///Ditto
-        @trusted void userData(T)(T t) if (is(T == class)) { _userData = cast(void*) t; }
-
-        ///The width of the window
-        const ushort width() { return _width; }
-
-        ///The height of the window
-        const ushort height() { return _height; }
-    }
-
-    version (Windows) alias win32 = platformData;
-
-    void close()
-    {
-        platformCloseWindow(_platformData);
-    }
-
-    void show()
-    {
-        platformShowWindow(_platformData);
-    }
-
-    void hide()
-    {
-        platformHideWindow(_platformData);
-    }
-
-    void resize(ushort newWidth, ushort newHeight)
-    {
-        platformResizeWindow(_platformData, newWidth, newHeight);
-    }
-
-    WindowResizeCallback resizeCallback;
-    WindowDrawCallback drawCallback;
-
-package(oswald):
-
-    @property void isCloseRequested(bool icr)
-    {
-        _isCloseRequested = icr;
-    }
-
-    @property void cursorIsInWindow(bool ciin)
-    {
-        _cursorIsInWindow = ciin;
-    }
-
-    ushort _width;
-    ushort _height;
-
-private:
-    PlatformWindowData _platformData;
-    WindowInput _input;
-
-    void* _userData;
-    bool _isCloseRequested;
-    bool _cursorIsInWindow;
+enum WindowMode : ubyte {
+    Windowed,
+    Maximized,
+    Minimized,
+    Hidden
 }
 
-class Window
-{
-    import oswald.platform: PlatformWindowData;
-    import oswald.input: WindowInput;
+struct WindowConfig {
+    const char[] title;
+    short width, height;
+    bool resizable;
+    OsEventHandler* event_handler;
+    void* client_data;
+}
 
-public:
-    this(WindowConfig cfg)
-    {
-        const err = OsWindow.createNew(cfg, &_window);
+/**
+OsWindow provides an API for managing a single operating system window.
+*/
+struct OsWindow {
+    void* platform_data;
+    CursorIcon cursor_icon;
+    bool has_cursor;
+    bool close_requested;
 
-        if (err)
-            assert(false, "Oswald was unable to create a window.");
+    void* client_data;
+    OsEventHandler* event_handler;
+
+    ~this() {
+        platform_destroy_window(platform_data);
     }
 
-    //dfmt off
-    @property
-    {
-        /**
-        * `true` if a request to close the window was made, `false`
-        * otherwise.
-        */
-        bool isCloseRequested() const { return _window.isCloseRequested; }
-
-        PlatformWindowData platformData() { return _window.platformData; }
-
-        ref WindowInput input() { return _window.input; }
-
-        void title(string newTitle) { _window.title = newTitle; }
-
-        void* userData() { return _window.userData; }
-
-        void userData(void* userData) { _window.userData = userData; }
-
-        @trusted void userData(T)(T t) if (is(T == class))
-            { _window.userData = t; }
-
-        ushort width() { return _window.width; }
-
-        ushort height() { return _window.height; }
-
-        version(Windows) alias win32 = platformData;
+    void close() {
+        platform_close_window(platform_data);
     }
 
-    void close() { _window.close(); }
+    void retitle(const char[] new_title) {
+        platform_retitle_window(platform_data, new_title);
+    }
 
-    void show() { _window.show(); }
+    void resize(short width, short height) {
+        platform_resize_window(platform_data, width, height);
+    }
 
-    void hide() { _window.hide(); }
-    //dfmt on
+    void set_mode(WindowMode new_mode) {
+        platform_set_window_mode(platform_data, new_mode);
+    }
 
-    WindowResizeCallback resizeCallback;
+    void set_cursor(CursorIcon icon) {
+        platform_set_window_cursor(platform_data, icon);
+        cursor_icon = icon;
+    }
 
-private:
-    OsWindow _window;
+    /**
+    Poll the operating system for events pertaining to this particular window.
+    */
+    void poll_events() {
+        platform_poll_events(platform_data);
+    }
+
+    /**
+    Waits until the selected window produces input events, then process input events
+    until they have all been processed.
+    */
+    void wait_events() {
+        platform_wait_events(platform_data);
+    }
+}
+
+/**
+Create a new window and store its state in the offered location.
+*/
+void create_window(OsWindow* window, WindowConfig config) {
+    auto hwnd = platform_create_window(config, window);
+    window.platform_data = hwnd;
+    window.client_data = config.client_data;
+    window.event_handler = config.event_handler;
+    window.cursor_icon = CursorIcon.Pointer;
+}
+
+/**
+Poll the operating system for any unprocessed input events and processed all of
+them.
+*/
+void poll_events() {
+    platform_poll_events();
+}
+
+/**
+Wait until any window receives and input event, then process input events until
+they have all been processed.
+*/
+void wait_events() {
+    platform_wait_events();
 }

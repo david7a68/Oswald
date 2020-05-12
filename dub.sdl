@@ -5,8 +5,3 @@ copyright "Copyright © 2017, David Zhang"
 license "BSD 3-clause"
 
 targetPath "bin"
-
-configuration "ex-emptywindow" {
-	targetType "executable"
-	sourceFiles "examples/emptywindow.d"
-}

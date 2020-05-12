@@ -1,54 +1,15 @@
 module oswald.platform;
 
-enum platformPageScroll = uint.max;
+version (Windows) {
+    import oswald.platform.win32;
 
-//dfmt off
-static immutable platformFunctions = [
-    "CreateWindow",
-    "DestroyWindow",
-    "CloseWindow",
-
-    "ShowWindow",
-    "HideWindow",
-
-    "SetTitle",
-
-    "ResizeWindow"
-];
-
-static immutable platformConstants = [
-    "ScrollLines"
-];
-
-static immutable platformTypes = [
-    "WindowData",
-];
-//dfmt on
-
-version (Windows)
-{
-    public import oswald.platform.win32;
-
-    enum functionPrefix = "win32";
-    enum typePrefix = "Win32";
-
-    //Wierd alias issue. Compiler error without this when building external projects
-    alias platformProcessEvents = win32ProcessEvents;
-
-    alias PlatformWindowData = Win32WindowData;
-}
-
-mixin(genPlatformAlias!("platform", functionPrefix)(platformFunctions));
-mixin(genPlatformAlias!("platform", functionPrefix)(platformConstants));
-
-private:
-
-string genPlatformAlias(string aliasPrefix, string platformPrefix)(in string[] names)
-{
-    string result;
-
-    foreach(name; names)
-        result ~= "alias " ~ aliasPrefix ~ name ~ " = " ~ platformPrefix ~ name ~ ";";
-
-    return result;
+    alias platform_create_window = win32_create_window;
+    alias platform_destroy_window = win32_destroy_window;
+    alias platform_close_window = win32_close_window;
+    alias platform_set_window_mode = win32_set_window_mode;
+    alias platform_resize_window = win32_resize_window;
+    alias platform_retitle_window = win32_retitle_window;
+    alias platform_set_window_cursor = win32_set_window_cursor;
+    alias platform_poll_events = win32_poll_events;
+    alias platform_wait_events = win32_wait_events;
 }
