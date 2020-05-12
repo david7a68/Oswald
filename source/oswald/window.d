@@ -41,6 +41,7 @@ struct WindowConfig {
     const char[] title;
     short width, height;
     bool resizable;
+    /// The event handler to be used by this window.
     OsEventHandler* event_handler;
     void* client_data;
 }
@@ -110,7 +111,7 @@ void create_window(OsWindow* window, WindowConfig config) {
 }
 
 /**
-Poll the operating system for any unprocessed input events and processed all of
+Poll the operating system for any unprocessed input events and process all of
 them.
 */
 void poll_events() {

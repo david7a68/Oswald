@@ -185,11 +185,16 @@ void dispatch(string name, Args...)(OsWindow* window, Args args) nothrow {
 
     try {
         if (window is null || window.event_handler is null)
-            mixin("global_event_handler.%s(window, args);".format(name));
+            mixin("global_event_handler.%s(window, global_event_handler, args);".format(name));
         else {
             mixin(
-                "if (window.event_handler.%s) window.event_handler.%s(window, args); else global_event_handler.%s(window, args);".format(
+                "if (window.event_handler.%s) {
+                    auto should_propagate = window.event_handler.%s(window, window.event_handler, args);
+                    if (should_propagate) global_event_handler.%s(window, global_event_handler, args);
+                }
+                else global_event_handler.%s(window, global_event_handler, args);".format(
                     name, 
+                    name,
                     name,
                     name
                 )
