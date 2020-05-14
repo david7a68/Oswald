@@ -1,8 +1,11 @@
 module oswald.platform.win32;
 
-import oswald.event;
-import oswald.input;
+package:
+
+import oswald.types;
+import oswald.window_data;
 import oswald.window;
+
 import core.sys.windows.windows;
 
 pragma(lib, "user32");
@@ -36,7 +39,7 @@ HCURSOR get_cursor(CursorIcon icon) nothrow {
     return cursor_icons[icon];
 }
 
-HWND win32_create_window(WindowConfig config, void* window_data) nothrow {
+HWND win32_create_window(WindowConfig config, Window* window_data) nothrow {
     if (!registered_window_class) { // the first time a window is created
         WNDCLASSEXW wc;
         wc.cbSize = WNDCLASSEXW.sizeof;
@@ -61,7 +64,6 @@ HWND win32_create_window(WindowConfig config, void* window_data) nothrow {
     
     if (!config.resizable)
         style ^= WS_SIZEBOX;
-
     //dfmt off
     HWND hwnd = CreateWindowExW(
         0,                              //Extended style flags
@@ -73,15 +75,18 @@ HWND win32_create_window(WindowConfig config, void* window_data) nothrow {
         NULL,                           //Parent window
         NULL,                           //Menu
         GetModuleHandleW(NULL),         //hInstance handle
-        NULL
+        window_data
     );
     //dfmt on
 
     assert(hwnd, "Failed to create window!");
+    assert(window_data.platform_data == hwnd);
 
-    win32_bind_handle(hwnd, window_data);
+    SetPropW(hwnd, window_property.ptr, window_data);
+    win32_set_window_cursor(hwnd, window_data.cursor_icon);
+    assert(GetPropW(hwnd, window_property.ptr) == window_data);
+
     win32_set_window_mode(hwnd, WindowMode.Windowed);
-    win32_set_window_cursor(hwnd, CursorIcon.Pointer);
 
     return hwnd;
 }
@@ -168,6 +173,8 @@ void win32_wait_events(HWND window) nothrow {
     }
 }
 
+private:
+
 wchar[] write_wchar_buffer(const char[] from, wchar[] destination_buffer) nothrow
         in (from.length < destination_buffer.length) {
     import std.utf: byWchar;
@@ -180,22 +187,25 @@ wchar[] write_wchar_buffer(const char[] from, wchar[] destination_buffer) nothro
     return destination_buffer[0 .. from.length];
 }
 
-void dispatch(string name, Args...)(OsWindow* window, Args args) nothrow {
+OsEventHandler* get_active_handler(Window* window) nothrow {
+    if (window.event_handler)
+        return window.event_handler;
+    return global_event_handler;
+}
+
+void dispatch(string name, Args...)(Window* window, Args args) nothrow {
     import std.format: format;
 
     try {
         if (window is null || window.event_handler is null)
-            mixin("global_event_handler.%s(window, global_event_handler, args);".format(name));
+            mixin("global_event_handler.%s(window.handle, global_event_handler, args);".format(name));
         else {
             mixin(
-                "if (window.event_handler.%s) {
-                    auto should_propagate = window.event_handler.%s(window, window.event_handler, args);
-                    if (should_propagate) global_event_handler.%s(window, global_event_handler, args);
+                "if (window.event_handler.%1$s) {
+                    auto should_propagate = window.event_handler.%1$s(window.handle, window.event_handler, args);
+                    if (should_propagate) global_event_handler.%1$s(window.handle, global_event_handler, args);
                 }
-                else global_event_handler.%s(window, global_event_handler, args);".format(
-                    name, 
-                    name,
-                    name,
+                else global_event_handler.%1$s(window.handle, global_event_handler, args);".format(
                     name
                 )
             );
@@ -204,7 +214,14 @@ void dispatch(string name, Args...)(OsWindow* window, Args args) nothrow {
 }
 
 extern (Windows) LRESULT window_procedure(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) nothrow {
-    auto window = cast(OsWindow*) GetPropW(hwnd, window_property.ptr);
+    if (msg == WM_CREATE) {
+        auto cs = cast(CREATESTRUCT*) lp;
+        auto window = cast(Window*) cs.lpCreateParams;
+        window.platform_data = hwnd;
+        return 0;
+    }
+
+    auto window = cast(Window*) GetPropW(hwnd, window_property.ptr);
 
     if (window is null)
         return DefWindowProc(hwnd, msg, wp, lp);
@@ -218,8 +235,7 @@ extern (Windows) LRESULT window_procedure(HWND hwnd, uint msg, WPARAM wp, LPARAM
         const scancode = (lp & 0x00FF0000) >> 16;
         const state = lp >> 31 ? ButtonState.Released : ButtonState.Pressed;
 
-        const extended_aware = (window.event_handler && window.event_handler.is_left_right_key_aware) ||
-                                global_event_handler.is_left_right_key_aware;
+        const extended_aware = get_active_handler(window).is_left_right_key_aware;
 
         auto key = () {
             auto k = keycode_table[wp];

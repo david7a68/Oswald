@@ -5,25 +5,25 @@
 module sandbox;
 
 import std.stdio;
-import oswald.window;
-import oswald.input;
-import oswald.event;
+import oswald;
 
 void main() {
-    auto event_handler = create_event_handler();
+    auto event_handler = create_custom_event_handler();
 
-    OsWindow window;
-    create_window(&window, WindowConfig("Hello", 1280, 720, true, cast(OsEventHandler*) &event_handler));
+    auto config = WindowConfig("Hello", 1280, 720, true);
+    config.custom_event_handler = cast(OsEventHandler*) &event_handler;
 
-    while (!window.close_requested)
-        window.wait_events();
+    auto handle = create_window(config);
+
+    while (!is_close_requested(handle))
+        wait_events();
 
     writeln(event_handler.num_keys_pressed, " key events occured while the window was open.");
 
-    destroy(window);
+    destroy_window(handle);
 }
 
-auto create_event_handler() {
+auto create_custom_event_handler() {
     struct Handler {
         OsEventHandler event_handler;
         alias event_handler this;
@@ -39,7 +39,7 @@ auto create_event_handler() {
 
         if (key == KeyCode.Escape)
             window.close();
-        
+
         (cast(Handler*) handler).num_keys_pressed++;
 
         return true;

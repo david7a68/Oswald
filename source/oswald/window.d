@@ -1,113 +1,94 @@
 module oswald.window;
 
-// support both per-window input processing and global input processing
-
-import oswald.event: OsEventHandler;
+import oswald.types;
+import oswald.window_data: windows, event_handlers;
 import oswald.platform;
 
-enum CursorIcon : ubyte {
-    /// ⭦
-    Pointer,
-    /// ⌛
-    Wait,
-    /// Ꮖ
-    IBeam,
-    /// ⭤
-    ResizeHorizontal,
-    /// ⭥
-    ResizeVertical,
-    /// ⤡
-    ResizeNorthwestSoutheast,
-    /// ⤢
-    ResizeCornerNortheastSouthwest,
-    /// 
-    UserDefined1 = 128,
-    /// 
-    UserDefined2,
-    /// 
-    UserDefined3,
-    /// 
-    UserDefined4
+WindowHandle create_window(WindowConfig config) {
+    auto handle = windows.alloc();
+
+    if (!windows.is_valid(handle))
+        assert(false);
+
+    auto window = windows.get(handle);
+
+    if (config.custom_event_handler) {
+        window.event_handler = config.custom_event_handler;
+    }
+    else {
+        event_handlers[handle.id] = config.event_handler;
+        window.event_handler = &event_handlers[handle.id];
+    }
+
+    platform_create_window(config, window);
+
+    return handle;
 }
 
-enum WindowMode : ubyte {
-    Windowed,
-    Maximized,
-    Minimized,
-    Hidden
+void destroy_window(WindowHandle handle) {
+    auto window = windows.get(handle);
+
+    if (window is null)
+        return;
+
+    platform_destroy_window(window.platform_data);
+    windows.free(handle);
 }
 
-struct WindowConfig {
-    const char[] title;
-    short width, height;
-    bool resizable;
-    /// The event handler to be used by this window.
-    OsEventHandler* event_handler;
-    void* client_data;
+bool has_cursor(WindowHandle handle) {
+    return windows.get(handle).has_cursor;
 }
 
-/**
-OsWindow provides an API for managing a single operating system window.
-*/
-struct OsWindow {
-    void* platform_data;
-    CursorIcon cursor_icon;
-    bool has_cursor;
-    bool close_requested;
+bool is_close_requested(WindowHandle handle) {
+    return windows.get(handle).close_requested;
+}
 
-    void* client_data;
-    OsEventHandler* event_handler;
+void set_client_data(WindowHandle handle, void* data) {
+    windows.get(handle).client_data = data;
+}
 
-    ~this() {
-        platform_destroy_window(platform_data);
-    }
+void set_event_handler(WindowHandle handle, OsEventHandler event_handler) {
+    event_handlers[handle.id] = event_handler;
+    windows.get(handle).event_handler = &event_handlers[handle.id];
+}
 
-    void close() {
-        platform_close_window(platform_data);
-    }
+void set_custom_event_handler(WindowHandle handle, OsEventHandler* custom_event_handler) {
+    windows.get(handle).event_handler = custom_event_handler;
+}
 
-    void retitle(const char[] new_title) {
-        platform_retitle_window(platform_data, new_title);
-    }
+OsEventHandler get_event_handler(WindowHandle handle) {
+    if (windows.get(handle).event_handler != &event_handlers[handle.id])
+        return OsEventHandler();
+    return event_handlers[handle.id];
+}
 
-    void resize(short width, short height) {
-        platform_resize_window(platform_data, width, height);
-    }
+void close(WindowHandle handle) {
+    platform_close_window(windows.get(handle).platform_data);
+}
 
-    void set_mode(WindowMode new_mode) {
-        platform_set_window_mode(platform_data, new_mode);
-    }
+void retitle(WindowHandle handle, const char[] new_title) {
+    platform_retitle_window(windows.get(handle).platform_data, new_title);
+}
 
-    void set_cursor(CursorIcon icon) {
-        platform_set_window_cursor(platform_data, icon);
-        cursor_icon = icon;
-    }
+void resize(WindowHandle handle, short width, short height) {
+    platform_resize_window(windows.get(handle).platform_data, width, height);
+}
 
-    /**
-    Poll the operating system for events pertaining to this particular window.
-    */
-    void poll_events() {
-        platform_poll_events(platform_data);
-    }
+void set_mode(WindowHandle handle, WindowMode new_mode) {
+    platform_set_window_mode(windows.get(handle).platform_data, new_mode);
+}
 
-    /**
-    Waits until the selected window produces input events, then process input events
-    until they have all been processed.
-    */
-    void wait_events() {
-        platform_wait_events(platform_data);
-    }
+void set_cursor(WindowHandle handle, CursorIcon icon) {
+    auto window = windows.get(handle);
+    platform_set_window_cursor(window.platform_data, icon);
+    window.cursor_icon = icon;
 }
 
 /**
-Create a new window and store its state in the offered location.
+Poll the operating system for events pertaining to this particular window.
 */
-void create_window(OsWindow* window, WindowConfig config) {
-    auto hwnd = platform_create_window(config, window);
-    window.platform_data = hwnd;
-    window.client_data = config.client_data;
-    window.event_handler = config.event_handler;
-    window.cursor_icon = CursorIcon.Pointer;
+void poll_events(WindowHandle handle) {
+    platform_poll_events(windows.get(handle).platform_data);
 }
 
 /**
@@ -119,9 +100,76 @@ void poll_events() {
 }
 
 /**
+Waits until the selected window produces input events, then process input events
+until they have all been processed.
+*/
+void wait_events(WindowHandle handle) {
+    platform_wait_events(windows.get(handle).platform_data);
+}
+
+/**
 Wait until any window receives and input event, then process input events until
 they have all been processed.
 */
 void wait_events() {
     platform_wait_events();
 }
+
+version (Windows) {
+    import core.sys.windows.windows: HWND;
+
+    HWND get_hwnd(WindowHandle handle) {
+        if (auto window = windows.get(handle))
+            return window.platform_data;
+        return null;
+    }
+}
+
+void set_global_event_handler(OsEventHandler event_handler) {
+    global_event_handler_storage = event_handler;
+    global_event_handler = &global_event_handler_storage;
+}
+
+/// Returns the callbacks in the global event handler. If you set a custom event
+/// handler, this function will return a copy of the default event handler.
+OsEventHandler get_global_event_handler() {
+    if (global_event_handler != &global_event_handler_storage)
+        return default_handler;
+    return global_event_handler_storage;
+}
+
+/// Cause all events not handled by a window event handler to be handled by a
+/// custom event handler. Make sure that this event handler remains in memory
+/// as long as it is in use.
+void set_custom_global_event_handler(OsEventHandler* custom_event_handler) {
+    global_event_handler = custom_event_handler;
+}
+
+/// Reset the global event handler callbacks to their defaults. This will
+/// override any custom event handler you have set.
+void reset_global_event_handler() {
+    global_event_handler_storage = default_handler;
+    global_event_handler = &global_event_handler_storage;
+}
+
+package:
+
+OsEventHandler* global_event_handler;
+
+static this() {
+    global_event_handler = &global_event_handler_storage;
+}
+
+OsEventHandler global_event_handler_storage = default_handler;
+
+immutable default_handler = OsEventHandler(
+    (window, handler, key, state)          { return true; },
+    (window, handler, button, state)       { return true; },
+    (window, handler, scroll_amount)       { return true; },
+    (window, handler, cursor_x, cursor_y)  { return true; },
+    (window, handler)                      { return true; },
+    (window, handler, cursor_x, cursor_y)  { return true; },
+    (window, handler)                      { return true; },
+    (window, handler, width, height)       { return true; },
+    (window, handler)                      { return true; },
+);

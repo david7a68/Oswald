@@ -1,4 +1,132 @@
-module oswald.input;
+module oswald.types;
+
+alias WindowID = ushort;
+
+enum max_open_windows = 64;
+
+///
+enum CursorIcon : ubyte {
+    /// ⭦
+    Pointer,
+    /// ⌛
+    Wait,
+    /// Ꮖ
+    IBeam,
+    /// ⭤
+    ResizeHorizontal,
+    /// ⭥
+    ResizeVertical,
+    /// ⤡
+    ResizeNorthwestSoutheast,
+    /// ⤢
+    ResizeCornerNortheastSouthwest,
+    /// 
+    UserDefined1 = 128,
+    /// 
+    UserDefined2,
+    /// 
+    UserDefined3,
+    /// 
+    UserDefined4
+}
+
+enum WindowMode : ubyte {
+    Windowed,
+    Maximized,
+    Minimized,
+    Hidden
+}
+
+struct WindowConfig {
+    const char[] title;
+    short width, height;
+    bool resizable;
+    
+    /// The event handler to be used by this window. If you don't want to handle
+    /// any event, leave the callback null. If you don't want to handle any
+    /// events at all leave the handler auto initialized. They will be forwarded
+    /// to the global event handler.
+    OsEventHandler event_handler;
+
+    /// Set this if you have created a custom event handler.
+    /// e.g.
+    ///     struct { OsEventHandler callbacks; size_t event_counter; }
+    OsEventHandler* custom_event_handler;
+
+    /// User-specific data. Set this to whatever you want. It will be accessible
+    /// from within an event callback through the get_client_data(handle)
+    /// function.
+    void* client_data;
+}
+
+struct WindowHandle {
+    WindowID id;
+    ushort generation;
+}
+
+/// Window event callback. Return true if the event has been consumed, false to
+/// pass the event on to the global event handler.
+alias KeyCallback           = bool function(WindowHandle, OsEventHandler*, KeyCode, ButtonState);
+/// ditto
+alias MouseButtonCallback   = bool function(WindowHandle, OsEventHandler*, MouseButton, ButtonState);
+/// ditto
+alias ScrollBack            = bool function(WindowHandle, OsEventHandler*, int);
+/// ditto
+alias CursorMoveCallback    = bool function(WindowHandle, OsEventHandler*, short, short);
+/// ditto
+alias CursorExitCallback    = bool function(WindowHandle, OsEventHandler*);
+/// ditto
+alias CursorEnterCallback   = bool function(WindowHandle, OsEventHandler*, short, short);
+/// ditto
+alias CloseCallback         = bool function(WindowHandle, OsEventHandler*);
+/// ditto
+alias ResizeCallback        = bool function(WindowHandle, OsEventHandler*, short, short);
+/// ditto
+alias DestroyCallback       = bool function(WindowHandle, OsEventHandler*);
+
+/**
+By default, every window you create will send events to the global window event
+handler. You can override the event callbacks as you like on a per-window basis
+or replace the callbacks in the global event handler. This may occur at any time
+while the application is running, and will take effect the next time input is
+processed with the poll_events() or wait_events() functions are called.
+
+Additional data may be attached to an event handler by creating a struct with
+the handler as the first member, followed by other data. Set the event handler,
+then reinterpret the event handler passed into the event callbacks as your type.
+
+For example:
+```
+struct Handler {
+    OsEventHandler events;
+    alias events this;
+
+    uint num_key_events;
+}
+
+global_event_handler.on_key = (window, handler, key, state) {
+    (cast(Handler*) handler).num_key_events++;
+}
+```
+*/
+struct OsEventHandler {
+    KeyCallback             on_key;
+    MouseButtonCallback     on_mouse_button;
+
+    ScrollBack              on_scroll;
+    CursorMoveCallback      on_cursor_move;
+    CursorExitCallback      on_cursor_exit;
+    CursorEnterCallback     on_cursor_enter;
+
+    CloseCallback           on_close_request;
+    ResizeCallback          on_window_resize;
+    DestroyCallback         on_window_close;
+
+    /// Set this flag to true if left/right distinctions for keys such as
+    /// Control and Shift are desired. The undirected KeyCode.Control and
+    /// KeyCode.Shift will not be sent.
+    bool is_left_right_key_aware;
+}
 
 enum ButtonState : ubyte {
     Released,
