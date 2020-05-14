@@ -27,7 +27,7 @@ Oswald provides a 2-tiered method for handling events, a global event handler, a
 
 Optionally, if you want to keep track of per-handler data, you can create a struct with an `OsEventHandler` as the first member. Set `WindowConfig.custom_event_handler` before you create the window or call `set_custom_event_handler(handle, event_handler)` after the fact. Note that **you are responsible for ensuring that this memory remains valid for as long as windows are using it**.
 
-A similar process existst for the global event handler. The `set_global_event_handler(handler)`, `get_global_event_handler()`, and `set_custom_global_event_handler(handler*)` functions are defined to operate the same way that the per-window functions do.
+A similar process exists for the global event handler. The `set_global_event_handler(handler)`, `get_global_event_handler()`, and `set_custom_global_event_handler(handler*)` functions are defined to operate the same way that the per-window functions do.
 
 ## Known Issues
 
