@@ -47,6 +47,12 @@ void set_client_data(WindowHandle handle, void* data) {
     windows.get(handle).client_data = data;
 }
 
+void* get_client_data(WindowHandle handle) {
+    if (auto window = windows.get(handle))
+        return window.client_data;
+    return null;
+}
+
 void set_event_handler(WindowHandle handle, OsEventHandler* event_handler) {
     event_handlers[handle.id] = *event_handler;
     windows.get(handle).event_handler = &event_handlers[handle.id];
