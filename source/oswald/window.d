@@ -14,6 +14,7 @@ WindowHandle create_window(WindowConfig config) {
         assert(false);
 
     auto window = windows.get(handle);
+    window.client_data = config.client_data;
 
     if (config.custom_event_handler) {
         window.event_handler = config.custom_event_handler;
