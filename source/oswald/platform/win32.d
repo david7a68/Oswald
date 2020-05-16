@@ -2,10 +2,9 @@ module oswald.platform.win32;
 
 package:
 
-version (oswald_nogc) {
-    @nogc nothrow:
-}
-else nothrow:
+nothrow:
+
+version (oswald_nogc) @nogc:
 
 import oswald.types;
 import oswald.window_data;
@@ -219,6 +218,8 @@ void dispatch(string name, Args...)(Window* window, Args args) {
 }
 
 extern (Windows) LRESULT window_procedure(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) {
+    static immutable aux_buttons = [MouseButton.Button_4, MouseButton.Button_5];
+
     if (msg == WM_CREATE) {
         auto cs = cast(CREATESTRUCT*) lp;
         auto window = cast(Window*) cs.lpCreateParams;
@@ -290,12 +291,12 @@ extern (Windows) LRESULT window_procedure(HWND hwnd, uint msg, WPARAM wp, LPARAM
         return 0;
 
     case WM_XBUTTONDOWN:
-        const id = [MouseButton.Button_4, MouseButton.Button_5][HIWORD(wp)];
+        const id = aux_buttons[HIWORD(wp)];
         window.dispatch!"on_mouse_button"(id, ButtonState.Pressed);
         return 0;
 
     case WM_XBUTTONUP:
-        const id = [MouseButton.Button_4, MouseButton.Button_5][HIWORD(wp)];
+        const id = aux_buttons[HIWORD(wp)];
         window.dispatch!"on_mouse_button"(id, ButtonState.Released);
         return 0;
 

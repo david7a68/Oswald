@@ -1,8 +1,6 @@
 module oswald.types;
 
-version (oswald_nogc) {
-    @nogc:
-}
+version (oswald_nogc) @nogc:
 
 alias WindowID = ushort;
 

@@ -2,6 +2,8 @@ module oswald.window_data;
 
 package:
 
+version (oswald_nogc) @nogc:
+
 import oswald.types;
 
 enum invalid_slot_id = WindowID.max;

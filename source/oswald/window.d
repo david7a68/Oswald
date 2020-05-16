@@ -1,13 +1,11 @@
 module oswald.window;
 
+version (oswald_nogc) @nogc:
+
 import oswald.types;
 import oswald.window_data: windows, event_handlers;
 import oswald.platform;
 
-version (oswald_nogc) {
-    @nogc nothrow:
-}
-else nothrow:
 
 WindowHandle create_window(WindowConfig config) {
     auto handle = windows.alloc();
@@ -129,7 +127,7 @@ void wait_events() {
 version (Windows) {
     import core.sys.windows.windows: HWND;
 
-    HWND get_hwnd(WindowHandle handle) {
+    @nogc HWND get_hwnd(WindowHandle handle) {
         if (auto window = windows.get(handle))
             return window.platform_data;
         return null;
