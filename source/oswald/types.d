@@ -43,6 +43,11 @@ struct WindowConfig {
     const char[] title;
     short width, height;
     bool resizable;
+
+    /// User-specific data. Set this to whatever you want. It will be accessible
+    /// from within an event callback through the get_client_data(handle)
+    /// function.
+    void* client_data;
     
     /// The event handler to be used by this window. If you don't want to handle
     /// any event, leave the callback null. If you don't want to handle any
@@ -54,11 +59,6 @@ struct WindowConfig {
     /// e.g.
     ///     struct { OsEventHandler callbacks; size_t event_counter; }
     OsEventHandler* custom_event_handler;
-
-    /// User-specific data. Set this to whatever you want. It will be accessible
-    /// from within an event callback through the get_client_data(handle)
-    /// function.
-    void* client_data;
 }
 
 struct WindowHandle {

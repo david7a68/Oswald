@@ -19,9 +19,12 @@ WindowHandle create_window(WindowConfig config) {
     if (config.custom_event_handler) {
         window.event_handler = config.custom_event_handler;
     }
-    else {
+    else if (config.event_handler) {
         event_handlers[handle.id] = *config.event_handler;
         window.event_handler = &event_handlers[handle.id];
+    }
+    else {
+        window.event_handler = null;
     }
 
     platform_create_window(config, window);

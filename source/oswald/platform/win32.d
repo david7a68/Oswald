@@ -50,7 +50,6 @@ HWND win32_create_window(WindowConfig config, Window* window_data) {
         wc.style = CS_OWNDC | CS_VREDRAW | CS_HREDRAW;
         wc.lpfnWndProc = &window_procedure;
         wc.hInstance = GetModuleHandle(null);
-        // wc.hCursor = get_cursor(CursorIcon.Pointer);
         wc.lpszClassName = &wndclass_name[0];
 
         auto err = RegisterClassExW(&wc);
@@ -84,10 +83,11 @@ HWND win32_create_window(WindowConfig config, Window* window_data) {
     //dfmt on
 
     assert(hwnd, "Failed to create window!");
-    assert(window_data.platform_data == hwnd);
+    window_data.platform_data = hwnd;
 
-    SetPropW(hwnd, window_property.ptr, window_data);
     win32_set_window_cursor(hwnd, window_data.cursor_icon);
+    
+    SetPropW(hwnd, window_property.ptr, window_data);
     assert(GetPropW(hwnd, window_property.ptr) == window_data);
 
     win32_set_window_mode(hwnd, WindowMode.Windowed);
@@ -219,13 +219,6 @@ void dispatch(string name, Args...)(Window* window, Args args) {
 
 extern (Windows) LRESULT window_procedure(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) {
     static immutable aux_buttons = [MouseButton.Button_4, MouseButton.Button_5];
-
-    if (msg == WM_CREATE) {
-        auto cs = cast(CREATESTRUCT*) lp;
-        auto window = cast(Window*) cs.lpCreateParams;
-        window.platform_data = hwnd;
-        return 0;
-    }
 
     auto window = cast(Window*) GetPropW(hwnd, window_property.ptr);
 
