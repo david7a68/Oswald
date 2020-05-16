@@ -16,7 +16,7 @@ WindowHandle create_window(WindowConfig config) {
         window.event_handler = config.custom_event_handler;
     }
     else {
-        event_handlers[handle.id] = config.event_handler;
+        event_handlers[handle.id] = *config.event_handler;
         window.event_handler = &event_handlers[handle.id];
     }
 
