@@ -4,6 +4,11 @@ import oswald.types;
 import oswald.window_data: windows, event_handlers;
 import oswald.platform;
 
+version (oswald_nogc) {
+    @nogc nothrow:
+}
+else nothrow:
+
 WindowHandle create_window(WindowConfig config) {
     auto handle = windows.alloc();
 

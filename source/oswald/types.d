@@ -1,5 +1,9 @@
 module oswald.types;
 
+version (oswald_nogc) {
+    @nogc:
+}
+
 alias WindowID = ushort;
 
 enum max_open_windows = 64;

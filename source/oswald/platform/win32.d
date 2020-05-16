@@ -2,6 +2,11 @@ module oswald.platform.win32;
 
 package:
 
+version (oswald_nogc) {
+    @nogc nothrow:
+}
+else nothrow:
+
 import oswald.types;
 import oswald.window_data;
 import oswald.window;
@@ -16,7 +21,7 @@ __gshared uint num_scroll_lines;
 immutable wndclass_name = "blip_window_class\0"w;
 immutable window_property = "blip_property\0"w;
 
-HCURSOR get_cursor(CursorIcon icon) nothrow {
+HCURSOR get_cursor(CursorIcon icon) {
     static HCURSOR[16] cursor_icons;
 
     if (cursor_icons[icon] is null && icon < CursorIcon.UserDefined1) {
@@ -39,7 +44,7 @@ HCURSOR get_cursor(CursorIcon icon) nothrow {
     return cursor_icons[icon];
 }
 
-HWND win32_create_window(WindowConfig config, Window* window_data) nothrow {
+HWND win32_create_window(WindowConfig config, Window* window_data) {
     if (!registered_window_class) { // the first time a window is created
         WNDCLASSEXW wc;
         wc.cbSize = WNDCLASSEXW.sizeof;
@@ -91,19 +96,19 @@ HWND win32_create_window(WindowConfig config, Window* window_data) nothrow {
     return hwnd;
 }
 
-void win32_destroy_window(HWND window) nothrow {
+void win32_destroy_window(HWND window) {
     DestroyWindow(window);
 }
 
-void win32_close_window(HWND window) nothrow {
+void win32_close_window(HWND window) {
     PostMessageW(window, WM_CLOSE, 0, 0);
 }
 
-void win32_bind_handle(HWND window, void* window_data) nothrow {
+void win32_bind_handle(HWND window, void* window_data) {
     SetPropW(window, window_property.ptr, window_data);
 }
 
-void win32_set_window_mode(HWND window, WindowMode mode) nothrow {
+void win32_set_window_mode(HWND window, WindowMode mode) {
     switch (mode) {
         case WindowMode.Hidden:
             ShowWindow(window, SW_HIDE);
@@ -121,29 +126,29 @@ void win32_set_window_mode(HWND window, WindowMode mode) nothrow {
     }
 }
 
-void win32_resize_window(HWND window, ushort width, ushort height) nothrow {
+void win32_resize_window(HWND window, ushort width, ushort height) {
     RECT rect;
     GetWindowRect(window, &rect);
 
     MoveWindow(window, rect.left, rect.top, width, height, true);
 }
 
-void win32_retitle_window(HWND window, const char[] new_title) nothrow {
+void win32_retitle_window(HWND window, const char[] new_title) {
     wchar[256] title_buffer;
     auto win32_title = write_wchar_buffer(new_title, title_buffer);
 
     SetWindowText(window, win32_title.ptr);
 }
 
-void win32_set_window_cursor(HWND window, CursorIcon icon) nothrow {
+void win32_set_window_cursor(HWND window, CursorIcon icon) {
     SetCursor(get_cursor(icon));
 }
 
-void win32_poll_events() nothrow {
+void win32_poll_events() {
     win32_poll_events(null);
 }
 
-void win32_poll_events(HWND window) nothrow {
+void win32_poll_events(HWND window) {
     MSG msg;
 
     while (PeekMessage(&msg, window, 0, 0, PM_REMOVE) != 0) {
@@ -152,11 +157,11 @@ void win32_poll_events(HWND window) nothrow {
     }
 }
 
-void win32_wait_events() nothrow {
+void win32_wait_events() {
     win32_wait_events(null);
 }
 
-void win32_wait_events(HWND window) nothrow {
+void win32_wait_events(HWND window) {
     MSG msg;
 
     const quit = GetMessage(&msg, window, 0, 0);
@@ -187,13 +192,13 @@ wchar[] write_wchar_buffer(const char[] from, wchar[] destination_buffer) nothro
     return destination_buffer[0 .. from.length];
 }
 
-OsEventHandler* get_active_handler(Window* window) nothrow {
+OsEventHandler* get_active_handler(Window* window) {
     if (window.event_handler)
         return window.event_handler;
     return global_event_handler;
 }
 
-void dispatch(string name, Args...)(Window* window, Args args) nothrow {
+void dispatch(string name, Args...)(Window* window, Args args) {
     import std.format: format;
 
     try {
@@ -213,7 +218,7 @@ void dispatch(string name, Args...)(Window* window, Args args) nothrow {
     } catch (Exception e) {}
 }
 
-extern (Windows) LRESULT window_procedure(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) nothrow {
+extern (Windows) LRESULT window_procedure(HWND hwnd, uint msg, WPARAM wp, LPARAM lp) {
     if (msg == WM_CREATE) {
         auto cs = cast(CREATESTRUCT*) lp;
         auto window = cast(Window*) cs.lpCreateParams;

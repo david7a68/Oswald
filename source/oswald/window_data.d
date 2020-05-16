@@ -33,11 +33,11 @@ struct WindowAllocator(size_t num_slots) {
     /// The first entry in the free list.
     size_t first_free_slot = WindowID.max;
 
-    bool is_valid(WindowHandle handle) {
+    @nogc bool is_valid(WindowHandle handle) {
         return get(handle) !is null;
     }
 
-    WindowHandle alloc() {
+    @nogc WindowHandle alloc() {
         const has_unused_slots = num_allocated < slots.length;
         const has_free_slots = first_free_slot < slots.length;
 
@@ -60,7 +60,7 @@ struct WindowAllocator(size_t num_slots) {
         return WindowHandle(WindowID.max, WindowID.max);
     }
 
-    void free(WindowHandle handle) {
+    @nogc void free(WindowHandle handle) {
         auto window = &slots[handle.id];
         const current_generation = window.handle.generation;
 
@@ -71,7 +71,7 @@ struct WindowAllocator(size_t num_slots) {
         num_active--;
     }
 
-    Window* get(WindowHandle handle) {
+    @nogc Window* get(WindowHandle handle) {
         if (handle.id > slots.length)
             return null;
 
