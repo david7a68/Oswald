@@ -46,7 +46,7 @@ struct WindowConfig {
     /// any event, leave the callback null. If you don't want to handle any
     /// events at all leave the handler auto initialized. They will be forwarded
     /// to the global event handler.
-    OsEventHandler event_handler;
+    OsEventHandler* event_handler;
 
     /// Set this if you have created a custom event handler.
     /// e.g.

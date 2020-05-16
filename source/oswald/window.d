@@ -47,8 +47,8 @@ void set_client_data(WindowHandle handle, void* data) {
     windows.get(handle).client_data = data;
 }
 
-void set_event_handler(WindowHandle handle, OsEventHandler event_handler) {
-    event_handlers[handle.id] = event_handler;
+void set_event_handler(WindowHandle handle, OsEventHandler* event_handler) {
+    event_handlers[handle.id] = *event_handler;
     windows.get(handle).event_handler = &event_handlers[handle.id];
 }
 
@@ -125,8 +125,8 @@ version (Windows) {
     }
 }
 
-void set_global_event_handler(OsEventHandler event_handler) {
-    global_event_handler_storage = event_handler;
+void set_global_event_handler(OsEventHandler* event_handler) {
+    global_event_handler_storage = *event_handler;
     global_event_handler = &global_event_handler_storage;
 }
 
