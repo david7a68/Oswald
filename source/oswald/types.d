@@ -52,11 +52,6 @@ struct WindowConfig {
     /// events at all leave the handler auto initialized. They will be forwarded
     /// to the global event handler.
     OsEventHandler* event_handler;
-
-    /// Set this if you have created a custom event handler.
-    /// e.g.
-    ///     struct { OsEventHandler callbacks; size_t event_counter; }
-    OsEventHandler* custom_event_handler;
 }
 
 struct WindowHandle {

@@ -23,6 +23,9 @@ struct Window {
     bool close_requested;
 }
 
+/**
+Manages the allocation of memory for windows and their associated data.
+*/
 struct WindowAllocator(size_t num_slots) {
     Window[num_slots] slots;
 
@@ -34,7 +37,9 @@ struct WindowAllocator(size_t num_slots) {
     size_t first_free_slot = WindowID.max;
 
     @nogc bool is_valid(WindowHandle handle) {
-        return get(handle) !is null;
+        if (handle.id > slots.length) return false;
+        if (handle.generation != slots[handle.id].handle.generation) return false;
+        return true;
     }
 
     @nogc WindowHandle alloc() {

@@ -188,28 +188,19 @@ wchar[] write_wchar_buffer(const char[] from, wchar[] destination_buffer) nothro
 }
 
 OsEventHandler* get_active_handler(Window* window) {
-    if (window.event_handler)
-        return window.event_handler;
-    return global_event_handler;
+    return window.event_handler; // may be null
 }
 
 void dispatch(string name, Args...)(Window* window, Args args) {
     import std.format: format;
 
+    if (window is null || window.event_handler is null)
+        return;
+
     try {
-        if (window is null || window.event_handler is null)
-            mixin("global_event_handler.%s(window.handle, global_event_handler, args);".format(name));
-        else {
-            mixin(
-                "if (window.event_handler.%1$s) {
-                    auto should_propagate = window.event_handler.%1$s(window.handle, window.event_handler, args);
-                    if (should_propagate) global_event_handler.%1$s(window.handle, global_event_handler, args);
-                }
-                else global_event_handler.%1$s(window.handle, global_event_handler, args);".format(
-                    name
-                )
-            );
-        }
+        mixin(
+            "if (window.event_handler && window.event_handler.%1$s)
+                window.event_handler.%1$s(window.handle, window.event_handler, args);".format(name));
     } catch (Exception e) {}
 }
 
@@ -270,15 +261,10 @@ extern (Windows) LRESULT window_procedure(HWND hwnd, uint msg, WPARAM wp, LPARAM
         return 0;
 
     case WM_MOUSEMOVE:
-        union Splitter {
-            LPARAM lparam;
-            struct{ short x, y; }
-        }
-
-        auto splitter = Splitter(lp);
-
+        auto x = cast(short) (lp & 0xFFFF);
+        auto y = cast(short) ((lp >> 16) & 0xFFFF);
         if (window.has_cursor)
-            window.dispatch!"on_cursor_move"(splitter.x, splitter.y);
+            window.dispatch!"on_cursor_move"(x, y);
         else {
             TRACKMOUSEEVENT tme;
             tme.cbSize = tme.sizeof;
@@ -288,15 +274,13 @@ extern (Windows) LRESULT window_procedure(HWND hwnd, uint msg, WPARAM wp, LPARAM
             TrackMouseEvent(&tme);
 
             window.has_cursor = true;
-            window.dispatch!"on_cursor_enter"(splitter.x, splitter.y);
+            window.dispatch!"on_cursor_enter"(x, y);
             SetCursor(get_cursor(window.cursor_icon));
         }
-
         return 0;
 
     case WM_MOUSEWHEEL:
-        auto lines = GET_WHEEL_DELTA_WPARAM(wp) / WHEEL_DELTA;
-        lines *= num_scroll_lines;
+        auto lines = (GET_WHEEL_DELTA_WPARAM(wp) / WHEEL_DELTA) * num_scroll_lines;
         window.dispatch!"on_scroll"(lines);
         return 0;
 
