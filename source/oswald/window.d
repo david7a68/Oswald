@@ -1,7 +1,7 @@
 module oswald.window;
 
 import oswald.types;
-import oswald.window_data: windows, event_handlers;
+import oswald.window_data: windows;
 import oswald.platform;
 
 
@@ -14,13 +14,8 @@ WindowHandle create_window(WindowConfig config) {
     auto window = windows.get(handle);
     window.client_data = config.client_data;
 
-    if (config.event_handler) {
-        event_handlers[handle.id] = *config.event_handler;
-        window.event_handler = &event_handlers[handle.id];
-    }
-    else {
-        window.event_handler = null;
-    }
+    auto handler_slot = windows.get_handler_for(handle);
+    *handler_slot = *config.event_handler;
 
     platform_create_window(config, window);
 
@@ -56,14 +51,11 @@ void* get_client_data(WindowHandle handle) {
 }
 
 void set_event_handler(WindowHandle handle, OsEventHandler* event_handler) {
-    event_handlers[handle.id] = *event_handler;
-    windows.get(handle).event_handler = &event_handlers[handle.id];
+    *windows.get_handler_for(handle) = *event_handler;
 }
 
 OsEventHandler get_event_handler(WindowHandle handle) {
-    if (windows.get(handle).event_handler != &event_handlers[handle.id])
-        return OsEventHandler();
-    return event_handlers[handle.id];
+    return *windows.get_handler_for(handle);
 }
 
 void close(WindowHandle handle) {

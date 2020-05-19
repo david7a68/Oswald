@@ -7,11 +7,8 @@ import oswald.types;
 enum invalid_slot_id = WindowID.max;
 
 WindowAllocator!max_open_windows windows;
-OsEventHandler[max_open_windows] event_handlers;
 
 struct Window {
-    OsEventHandler* event_handler;
-
     void* platform_data;
     void* client_data;
 
@@ -28,6 +25,7 @@ Manages the allocation of memory for windows and their associated data.
 */
 struct WindowAllocator(size_t num_slots) {
     Window[num_slots] slots;
+    OsEventHandler[num_slots] handlers;
 
     /// The number of slots that are currently in use.
     size_t num_active;
@@ -39,6 +37,7 @@ struct WindowAllocator(size_t num_slots) {
     @nogc bool is_valid(WindowHandle handle) {
         if (handle.id > slots.length) return false;
         if (handle.generation != slots[handle.id].handle.generation) return false;
+        if (slots[handle.id].platform_data is null) return false;
         return true;
     }
 
@@ -67,11 +66,13 @@ struct WindowAllocator(size_t num_slots) {
 
     @nogc void free(WindowHandle handle) {
         auto window = &slots[handle.id];
-        const current_generation = window.handle.generation;
 
+        const current_generation = window.handle.generation;
         window.handle.generation = cast(ushort) (current_generation + 1);
         window.next_window = cast(WindowID) first_free_slot;
         first_free_slot = handle.id;
+
+        handlers[handle.id] = OsEventHandler();
 
         num_active--;
     }
@@ -86,6 +87,12 @@ struct WindowAllocator(size_t num_slots) {
             return null;
 
         return window;
+    }
+
+    @nogc OsEventHandler* get_handler_for(WindowHandle handle) {
+        if (!is_valid(handle)) return null;
+
+        return &handlers[handle.id];
     }
 }
 

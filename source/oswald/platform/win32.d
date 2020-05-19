@@ -187,20 +187,15 @@ wchar[] write_wchar_buffer(const char[] from, wchar[] destination_buffer) nothro
     return destination_buffer[0 .. from.length];
 }
 
-OsEventHandler* get_active_handler(Window* window) {
-    return window.event_handler; // may be null
-}
-
 void dispatch(string name, Args...)(Window* window, Args args) {
     import std.format: format;
 
-    if (window is null || window.event_handler is null)
-        return;
+    if (window is null) return;
 
     try {
-        mixin(
-            "if (window.event_handler && window.event_handler.%1$s)
-                window.event_handler.%1$s(window.handle, window.event_handler, args);".format(name));
+        mixin("
+            if (auto callback = windows.get_handler_for(window.handle).%1$s)
+                callback(window.handle, windows.get_handler_for(window.handle), args);".format(name));
     } catch (Exception e) {}
 }
 
