@@ -1,7 +1,5 @@
 module oswald.platform;
 
-version (oswald_nogc) @nogc:
-
 version (Windows) {
     import oswald.platform.win32;
 

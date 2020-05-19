@@ -1,10 +1,6 @@
 module oswald.platform.win32;
 
-package:
-
-nothrow:
-
-version (oswald_nogc) @nogc:
+package nothrow:
 
 import oswald.types;
 import oswald.window_data;
@@ -228,35 +224,12 @@ extern (Windows) LRESULT window_procedure(HWND hwnd, uint msg, WPARAM wp, LPARAM
     switch (msg) {
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
+        window.dispatch!"on_key"(keycode_table[wp], ButtonState.Pressed);
+        return 0;
+
     case WM_KEYUP:
     case WM_SYSKEYUP:
-        const is_extended = (lp & 0x01000000) != 0;
-        const scancode = (lp & 0x00FF0000) >> 16;
-        const state = lp >> 31 ? ButtonState.Released : ButtonState.Pressed;
-
-        const extended_aware = get_active_handler(window).is_left_right_key_aware;
-
-        auto key = () {
-            auto k = keycode_table[wp];
-
-            if (!extended_aware)
-                return k;
-
-            switch (k) with (KeyCode) {
-                case Control:
-                    return is_extended ? RightControl : LeftControl;
-                case Shift:
-                    return keycode_table[MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX)];
-                case Super:
-                    return is_extended ? RightSuper : LeftSuper;
-                case Alt:
-                    return is_extended ? RightAlt : LeftAlt;
-                default:
-                    return k;
-            }
-        } ();
-
-        window.dispatch!"on_key"(key, state);
+        window.dispatch!"on_key"(keycode_table[wp], ButtonState.Released);
         return 0;
 
     case WM_LBUTTONDOWN:
@@ -284,13 +257,11 @@ extern (Windows) LRESULT window_procedure(HWND hwnd, uint msg, WPARAM wp, LPARAM
         return 0;
 
     case WM_XBUTTONDOWN:
-        const id = aux_buttons[HIWORD(wp)];
-        window.dispatch!"on_mouse_button"(id, ButtonState.Pressed);
+        window.dispatch!"on_mouse_button"(aux_buttons[(wp & 0x20) != 0], ButtonState.Pressed);
         return 0;
 
     case WM_XBUTTONUP:
-        const id = aux_buttons[HIWORD(wp)];
-        window.dispatch!"on_mouse_button"(id, ButtonState.Released);
+        window.dispatch!"on_mouse_button"(aux_buttons[(wp & 0x20) != 0], ButtonState.Released);
         return 0;
 
     case WM_MOUSELEAVE:

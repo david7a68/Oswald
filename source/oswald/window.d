@@ -1,7 +1,5 @@
 module oswald.window;
 
-version (oswald_nogc) @nogc:
-
 import oswald.types;
 import oswald.window_data: windows, event_handlers;
 import oswald.platform;
