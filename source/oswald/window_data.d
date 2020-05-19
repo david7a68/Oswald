@@ -37,9 +37,10 @@ struct WindowAllocator(size_t num_slots) {
     @nogc bool is_valid(WindowHandle handle) {
         if (handle.id > slots.length) return false;
         if (handle.generation != slots[handle.id].handle.generation) return false;
-        if (slots[handle.id].platform_data is null) return false;
         return true;
     }
+
+    @nogc bool is_live(WindowHandle handle) { return is_valid(handle) && slots[handle.id].platform_data !is null; }
 
     @nogc WindowHandle alloc() {
         const has_unused_slots = num_allocated < slots.length;

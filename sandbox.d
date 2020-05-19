@@ -29,7 +29,7 @@ void main() {
 auto create_custom_event_handler() {
     OsEventHandler event_handler;
 
-    event_handler.on_key = (window, handler, key, state) {
+    event_handler.on_key = (window, key, state) {
         writeln(key, ":", state);
 
         if (key == KeyCode.Escape)
@@ -40,7 +40,7 @@ auto create_custom_event_handler() {
         return true;
     };
 
-    event_handler.on_cursor_move = (window, handler, x, y) {
+    event_handler.on_cursor_move = (window, x, y) {
         writeln(x, ":", y);
         
         return true;

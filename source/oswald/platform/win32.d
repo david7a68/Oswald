@@ -195,7 +195,7 @@ void dispatch(string name, Args...)(Window* window, Args args) {
     try {
         mixin("
             if (auto callback = windows.get_handler_for(window.handle).%1$s)
-                callback(window.handle, windows.get_handler_for(window.handle), args);".format(name));
+                callback(window.handle, args);".format(name));
     } catch (Exception e) {}
 }
 

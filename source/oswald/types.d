@@ -61,49 +61,24 @@ struct WindowHandle {
 
 /// Window event callback. Return true if the event has been consumed, false to
 /// pass the event on to the global event handler.
-alias KeyCallback           = bool function(WindowHandle, OsEventHandler*, KeyCode, ButtonState);
+alias KeyCallback           = bool function(WindowHandle, KeyCode, ButtonState);
 /// ditto
-alias MouseButtonCallback   = bool function(WindowHandle, OsEventHandler*, MouseButton, ButtonState);
+alias MouseButtonCallback   = bool function(WindowHandle, MouseButton, ButtonState);
 /// ditto
-alias ScrollBack            = bool function(WindowHandle, OsEventHandler*, int);
+alias ScrollBack            = bool function(WindowHandle, int);
 /// ditto
-alias CursorMoveCallback    = bool function(WindowHandle, OsEventHandler*, short, short);
+alias CursorMoveCallback    = bool function(WindowHandle, short, short);
 /// ditto
-alias CursorExitCallback    = bool function(WindowHandle, OsEventHandler*);
+alias CursorExitCallback    = bool function(WindowHandle);
 /// ditto
-alias CursorEnterCallback   = bool function(WindowHandle, OsEventHandler*, short, short);
+alias CursorEnterCallback   = bool function(WindowHandle, short, short);
 /// ditto
-alias CloseCallback         = bool function(WindowHandle, OsEventHandler*);
+alias CloseCallback         = bool function(WindowHandle);
 /// ditto
-alias ResizeCallback        = bool function(WindowHandle, OsEventHandler*, short, short);
+alias ResizeCallback        = bool function(WindowHandle, short, short);
 /// ditto
-alias DestroyCallback       = bool function(WindowHandle, OsEventHandler*);
+alias DestroyCallback       = bool function(WindowHandle);
 
-/**
-By default, every window you create will send events to the global window event
-handler. You can override the event callbacks as you like on a per-window basis
-or replace the callbacks in the global event handler. This may occur at any time
-while the application is running, and will take effect the next time input is
-processed with the poll_events() or wait_events() functions are called.
-
-Additional data may be attached to an event handler by creating a struct with
-the handler as the first member, followed by other data. Set the event handler,
-then reinterpret the event handler passed into the event callbacks as your type.
-
-For example:
-```
-struct Handler {
-    OsEventHandler events;
-    alias events this;
-
-    uint num_key_events;
-}
-
-global_event_handler.on_key = (window, handler, key, state) {
-    (cast(Handler*) handler).num_key_events++;
-}
-```
-*/
 struct OsEventHandler {
     KeyCallback             on_key;
     MouseButtonCallback     on_mouse_button;
