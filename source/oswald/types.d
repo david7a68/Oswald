@@ -121,11 +121,6 @@ struct OsEventHandler {
     CloseCallback           on_close_request;
     ResizeCallback          on_window_resize;
     DestroyCallback         on_window_close;
-
-    /// Set this flag to true if left/right distinctions for keys such as
-    /// Control and Shift are desired. The undirected KeyCode.Control and
-    /// KeyCode.Shift will not be sent.
-    bool is_left_right_key_aware;
 }
 
 enum ButtonState : ubyte {

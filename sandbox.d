@@ -32,7 +32,6 @@ auto create_custom_event_handler() {
     }
 
     Handler event_handler;
-    event_handler.is_left_right_key_aware = true;
 
     event_handler.on_key = (window, handler, key, state) {
         writeln(key, ":", state);
