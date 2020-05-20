@@ -11,18 +11,17 @@ WindowHandle create_window(WindowConfig config) {
     if (!windows.is_valid(handle))
         assert(false);
 
-    auto window = windows.get(handle);
-    window.client_data = config.client_data;
-
     auto handler_slot = windows.get_handler_for(handle);
     *handler_slot = *config.event_handler;
 
+    auto window = windows.get(handle);
+    window.client_data = config.client_data;
     platform_create_window(config, window);
 
     return handle;
 }
 
-void destroy_window(WindowHandle handle) {
+void destroy_window(WindowHandle handle) in (is_live(handle)) {
     auto window = windows.get(handle);
 
     if (window is null)
@@ -32,49 +31,45 @@ void destroy_window(WindowHandle handle) {
     windows.free(handle);
 }
 
-bool has_cursor(WindowHandle handle) {
-    return windows.get(handle).has_cursor;
-}
+@nogc bool has_cursor         (WindowHandle handle) { return windows.get(handle).has_cursor; }
+@nogc bool is_close_requested (WindowHandle handle) { return windows.get(handle).close_requested; }
+@nogc bool is_live            (WindowHandle handle) { return windows.is_live(handle); }
 
-bool is_close_requested(WindowHandle handle) {
-    return windows.get(handle).close_requested;
-}
-
-void set_client_data(WindowHandle handle, void* data) {
+void set_client_data(WindowHandle handle, void* data) in (is_live(handle)) {
     windows.get(handle).client_data = data;
 }
 
-void* get_client_data(WindowHandle handle) {
+void* get_client_data(WindowHandle handle) in (is_live(handle)) {
     if (auto window = windows.get(handle))
         return window.client_data;
     return null;
 }
 
-void set_event_handler(WindowHandle handle, OsEventHandler* event_handler) {
+void set_event_handler(WindowHandle handle, OsEventHandler* event_handler) in (is_live(handle)) {
     *windows.get_handler_for(handle) = *event_handler;
 }
 
-OsEventHandler get_event_handler(WindowHandle handle) {
+OsEventHandler get_event_handler(WindowHandle handle) in (is_live(handle)) {
     return *windows.get_handler_for(handle);
 }
 
-void close(WindowHandle handle) {
+void close(WindowHandle handle) in (is_live(handle)) {
     platform_close_window(windows.get(handle).platform_data);
 }
 
-void retitle(WindowHandle handle, const char[] new_title) {
+void retitle(WindowHandle handle, const char[] new_title) in (is_live(handle)) {
     platform_retitle_window(windows.get(handle).platform_data, new_title);
 }
 
-void resize(WindowHandle handle, short width, short height) {
+void resize(WindowHandle handle, short width, short height) in (is_live(handle)) {
     platform_resize_window(windows.get(handle).platform_data, width, height);
 }
 
-void set_mode(WindowHandle handle, WindowMode new_mode) {
+void set_mode(WindowHandle handle, WindowMode new_mode) in (is_live(handle)) {
     platform_set_window_mode(windows.get(handle).platform_data, new_mode);
 }
 
-void set_cursor(WindowHandle handle, CursorIcon icon) {
+void set_cursor(WindowHandle handle, CursorIcon icon) in (is_live(handle)) {
     auto window = windows.get(handle);
     platform_set_window_cursor(window.platform_data, icon);
     window.cursor_icon = icon;
@@ -83,7 +78,7 @@ void set_cursor(WindowHandle handle, CursorIcon icon) {
 /**
 Poll the operating system for events pertaining to this particular window.
 */
-void poll_events(WindowHandle handle) {
+void poll_events(WindowHandle handle) in (is_live(handle)) {
     platform_poll_events(windows.get(handle).platform_data);
 }
 
@@ -99,7 +94,7 @@ void poll_events() {
 Waits until the selected window produces input events, then process input events
 until they have all been processed.
 */
-void wait_events(WindowHandle handle) {
+void wait_events(WindowHandle handle) in (is_live(handle)) {
     platform_wait_events(windows.get(handle).platform_data);
 }
 
@@ -114,7 +109,7 @@ void wait_events() {
 version (Windows) {
     import core.sys.windows.windows: HWND;
 
-    @nogc HWND get_hwnd(WindowHandle handle) {
+    @nogc HWND get_hwnd(WindowHandle handle) in (is_live(handle)) {
         if (auto window = windows.get(handle))
             return window.platform_data;
         return null;

@@ -262,16 +262,5 @@ enum KeyCode : ubyte {
     Keypad_Decimal  = 134,
     Keypad_Enter    = 135,
 
-    //Positional Keys
-    LeftShift       = 140,
-    LeftControl     = 141,
-    LeftAlt         = 142,
-    LeftSuper       = 143,
-
-    RightShift      = 144,
-    RightControl    = 145,
-    RightAlt        = 146,
-    RightSuper      = 147,
-
     KeyCodeTableSize
 }

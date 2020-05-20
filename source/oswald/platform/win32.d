@@ -4,7 +4,6 @@ package nothrow:
 
 import oswald.types;
 import oswald.window_data;
-import oswald.window;
 
 import core.sys.windows.windows;
 
@@ -15,29 +14,6 @@ __gshared uint num_scroll_lines;
 
 immutable wndclass_name = "blip_window_class\0"w;
 immutable window_property = "blip_property\0"w;
-
-HCURSOR get_cursor(CursorIcon icon) {
-    static HCURSOR[16] cursor_icons;
-
-    if (cursor_icons[icon] is null && icon < CursorIcon.UserDefined1) {
-        auto ico = () {
-            switch (icon) with (CursorIcon) {
-                case Pointer: return IDC_ARROW;
-                case Wait: return IDC_WAIT;
-                case IBeam: return IDC_IBEAM;
-                case ResizeHorizontal: return IDC_SIZEWE;
-                case ResizeVertical: return IDC_SIZENS;
-                case ResizeNorthwestSoutheast: return IDC_SIZENWSE;
-                case ResizeCornerNortheastSouthwest: return IDC_SIZENESW;
-                default: assert(false);
-            }
-        } ();
-
-        cursor_icons[icon] = LoadCursor(null, ico);
-    }
-
-    return cursor_icons[icon];
-}
 
 HWND win32_create_window(WindowConfig config, Window* window_data) {
     if (!registered_window_class) { // the first time a window is created
@@ -63,17 +39,20 @@ HWND win32_create_window(WindowConfig config, Window* window_data) {
     
     if (!config.resizable)
         style ^= WS_SIZEBOX;
+
+    RECT rect = { 0, 0, config.width, config.height };
+    AdjustWindowRectEx(&rect, style, FALSE, 0);
     //dfmt off
     HWND hwnd = CreateWindowExW(
-        0,                              //Extended style flags
-        &wndclass_name[0],              //The name of the window class
-        win32_title.ptr,                //The name of the window
-        style,                          //Window Style
-        CW_USEDEFAULT, CW_USEDEFAULT,   //(x, y) positions of the window
-        config.width, config.height,    //The width and height of the window
-        NULL,                           //Parent window
-        NULL,                           //Menu
-        GetModuleHandleW(NULL),         //hInstance handle
+        0,                                                  // Extended style flags
+        &wndclass_name[0],                                  // The name of the window class
+        win32_title.ptr,                                    // The name of the window
+        style,                                              // Window Style
+        CW_USEDEFAULT, CW_USEDEFAULT,                       // (x, y) positions of the window
+        rect.right - rect.left, rect.bottom - rect.top,     // The width and height of the window
+        NULL,                                               // Parent window
+        NULL,                                               // Menu
+        GetModuleHandleW(NULL),                             // hInstance handle
         window_data
     );
     //dfmt on
@@ -81,27 +60,18 @@ HWND win32_create_window(WindowConfig config, Window* window_data) {
     assert(hwnd, "Failed to create window!");
     window_data.platform_data = hwnd;
 
-    win32_set_window_cursor(hwnd, window_data.cursor_icon);
-    
     SetPropW(hwnd, window_property.ptr, window_data);
-    assert(GetPropW(hwnd, window_property.ptr) == window_data);
-
+    win32_set_window_cursor(hwnd, window_data.cursor_icon);
     win32_set_window_mode(hwnd, WindowMode.Windowed);
 
     return hwnd;
 }
 
-void win32_destroy_window(HWND window) {
-    DestroyWindow(window);
-}
+void win32_destroy_window(HWND window) { DestroyWindow(window); }
 
-void win32_close_window(HWND window) {
-    PostMessageW(window, WM_CLOSE, 0, 0);
-}
+void win32_close_window(HWND window) { PostMessageW(window, WM_CLOSE, 0, 0); }
 
-void win32_bind_handle(HWND window, void* window_data) {
-    SetPropW(window, window_property.ptr, window_data);
-}
+void win32_set_window_cursor(HWND window, CursorIcon icon) { SetCursor(get_cursor(icon)); }
 
 void win32_set_window_mode(HWND window, WindowMode mode) {
     switch (mode) {
@@ -135,45 +105,56 @@ void win32_retitle_window(HWND window, const char[] new_title) {
     SetWindowText(window, win32_title.ptr);
 }
 
-void win32_set_window_cursor(HWND window, CursorIcon icon) {
-    SetCursor(get_cursor(icon));
-}
-
-void win32_poll_events() {
-    win32_poll_events(null);
-}
+void win32_poll_events() { win32_poll_events(null); }
 
 void win32_poll_events(HWND window) {
     MSG msg;
 
-    while (PeekMessage(&msg, window, 0, 0, PM_REMOVE) != 0) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
+    while (PeekMessage(&msg, window, 0, 0, PM_REMOVE) != 0)
+        send_message(&msg);
 }
 
-void win32_wait_events() {
-    win32_wait_events(null);
-}
+void win32_wait_events() { win32_wait_events(null); }
 
 void win32_wait_events(HWND window) {
     MSG msg;
 
     const quit = GetMessage(&msg, window, 0, 0);
     
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
+    send_message(&msg);
 
     if (quit == 0)
         return;
 
-    while (PeekMessage(&msg, window, 0, 0, PM_REMOVE) != 0) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
+    while (PeekMessage(&msg, window, 0, 0, PM_REMOVE) != 0)
+        send_message(&msg);
 }
 
 private:
+
+pragma (inline) void send_message(MSG *msg) { TranslateMessage(msg); DispatchMessage(msg); }
+
+HCURSOR get_cursor(CursorIcon icon) {
+    static HCURSOR[16] cursor_icons;
+
+    if (cursor_icons[icon] is null && icon < CursorIcon.UserDefined1) {
+        auto ico = () {
+            switch (icon) with (CursorIcon) {
+                case Pointer:                           return IDC_ARROW;
+                case Wait:                              return IDC_WAIT;
+                case IBeam:                             return IDC_IBEAM;
+                case ResizeHorizontal:                  return IDC_SIZEWE;
+                case ResizeVertical:                    return IDC_SIZENS;
+                case ResizeNorthwestSoutheast:          return IDC_SIZENWSE;
+                case ResizeCornerNortheastSouthwest:    return IDC_SIZENESW;
+                default:                                assert(false);
+            }
+        } ();
+        cursor_icons[icon] = LoadCursor(null, ico);
+    }
+
+    return cursor_icons[icon];
+}
 
 wchar[] write_wchar_buffer(const char[] from, wchar[] destination_buffer) nothrow
         in (from.length < destination_buffer.length) {
@@ -431,17 +412,6 @@ immutable keycode_table = () {
         table[VK_MULTIPLY] = Keypad_Multiply;
         table[VK_DIVIDE] = Keypad_Divide;
         table[VK_OEM_PLUS] = Keypad_Enter;
-
-        //Positional Keys
-        table[VK_LSHIFT] = LeftShift;
-        table[VK_LCONTROL] = LeftControl;
-        table[VK_LMENU] = LeftAlt;
-        table[VK_LWIN] = LeftSuper;
-
-        table[VK_RSHIFT] = RightShift;
-        table[VK_RCONTROL] = RightControl;
-        table[VK_RMENU] = RightAlt;
-        table[VK_RWIN] = RightSuper;
     }
 
     return table;
