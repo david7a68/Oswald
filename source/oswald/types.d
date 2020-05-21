@@ -51,35 +51,34 @@ struct WindowConfig {
     /// any event, leave the callback null. If you don't want to handle any
     /// events at all leave the handler auto initialized. They will be forwarded
     /// to the global event handler.
-    OsEventHandler* event_handler;
+    WindowCallbacks* callbacks;
 }
 
 struct WindowHandle {
-    WindowID id;
-    ushort generation;
+    uint value;
 }
 
 /// Window event callback. Return true if the event has been consumed, false to
 /// pass the event on to the global event handler.
-alias KeyCallback           = bool function(WindowHandle, KeyCode, ButtonState);
+alias KeyCallback           = void function(WindowHandle, KeyCode, ButtonState);
 /// ditto
-alias MouseButtonCallback   = bool function(WindowHandle, MouseButton, ButtonState);
+alias MouseButtonCallback   = void function(WindowHandle, MouseButton, ButtonState);
 /// ditto
-alias ScrollBack            = bool function(WindowHandle, int);
+alias ScrollBack            = void function(WindowHandle, int);
 /// ditto
-alias CursorMoveCallback    = bool function(WindowHandle, short, short);
+alias CursorMoveCallback    = void function(WindowHandle, short, short);
 /// ditto
-alias CursorExitCallback    = bool function(WindowHandle);
+alias CursorExitCallback    = void function(WindowHandle);
 /// ditto
-alias CursorEnterCallback   = bool function(WindowHandle, short, short);
+alias CursorEnterCallback   = void function(WindowHandle, short, short);
 /// ditto
-alias CloseCallback         = bool function(WindowHandle);
+alias CloseCallback         = void function(WindowHandle);
 /// ditto
-alias ResizeCallback        = bool function(WindowHandle, short, short);
+alias ResizeCallback        = void function(WindowHandle, short, short);
 /// ditto
-alias DestroyCallback       = bool function(WindowHandle);
+alias DestroyCallback       = void function(WindowHandle);
 
-struct OsEventHandler {
+struct WindowCallbacks {
     KeyCallback             on_key;
     MouseButtonCallback     on_mouse_button;
 

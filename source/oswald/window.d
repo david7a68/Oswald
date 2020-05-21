@@ -4,15 +4,14 @@ import oswald.types;
 import oswald.window_data: windows;
 import oswald.platform;
 
-
 WindowHandle create_window(WindowConfig config) {
     auto handle = windows.alloc();
 
     if (!windows.is_valid(handle))
         assert(false);
 
-    auto handler_slot = windows.get_handler_for(handle);
-    *handler_slot = *config.event_handler;
+    auto handler_slot = windows.get_callbacks_for(handle);
+    *handler_slot = *config.callbacks;
 
     auto window = windows.get(handle);
     window.client_data = config.client_data;
@@ -45,12 +44,12 @@ void* get_client_data(WindowHandle handle) in (is_live(handle)) {
     return null;
 }
 
-void set_event_handler(WindowHandle handle, OsEventHandler* event_handler) in (is_live(handle)) {
-    *windows.get_handler_for(handle) = *event_handler;
+void set_callbacks(WindowHandle handle, WindowCallbacks* callbacks) in (is_live(handle)) {
+    *windows.get_callbacks_for(handle) = *callbacks;
 }
 
-OsEventHandler get_event_handler(WindowHandle handle) in (is_live(handle)) {
-    return *windows.get_handler_for(handle);
+WindowCallbacks get_callbacks(WindowHandle handle) in (is_live(handle)) {
+    return *windows.get_callbacks_for(handle);
 }
 
 void close(WindowHandle handle) in (is_live(handle)) {
@@ -86,9 +85,7 @@ void poll_events(WindowHandle handle) in (is_live(handle)) {
 Poll the operating system for any unprocessed input events and process all of
 them.
 */
-void poll_events() {
-    platform_poll_events();
-}
+void poll_events() { platform_poll_events(); }
 
 /**
 Waits until the selected window produces input events, then process input events
@@ -102,9 +99,7 @@ void wait_events(WindowHandle handle) in (is_live(handle)) {
 Wait until any window receives and input event, then process input events until
 they have all been processed.
 */
-void wait_events() {
-    platform_wait_events();
-}
+void wait_events() { platform_wait_events(); }
 
 version (Windows) {
     import core.sys.windows.windows: HWND;

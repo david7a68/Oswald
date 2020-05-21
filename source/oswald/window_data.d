@@ -25,7 +25,7 @@ Manages the allocation of memory for windows and their associated data.
 */
 struct WindowAllocator(size_t num_slots) {
     Window[num_slots] slots;
-    OsEventHandler[num_slots] handlers;
+    WindowCallbacks[num_slots] callbacks;
 
     /// The number of slots that are currently in use.
     size_t num_active;
@@ -35,12 +35,12 @@ struct WindowAllocator(size_t num_slots) {
     size_t first_free_slot = WindowID.max;
 
     @nogc bool is_valid(WindowHandle handle) {
-        if (handle.id > slots.length) return false;
-        if (handle.generation != slots[handle.id].handle.generation) return false;
+        if (id_of(handle) > slots.length) return false;
+        if (gen_of(handle) != gen_of(slots[id_of(handle)].handle)) return false;
         return true;
     }
 
-    @nogc bool is_live(WindowHandle handle) { return is_valid(handle) && slots[handle.id].platform_data !is null; }
+    @nogc bool is_live(WindowHandle handle) { return is_valid(handle) && slots[id_of(handle)].platform_data !is null; }
 
     @nogc WindowHandle alloc() {
         const has_unused_slots = num_allocated < slots.length;
@@ -50,7 +50,7 @@ struct WindowAllocator(size_t num_slots) {
 
         if (has_unused_slots) {
             auto slot = &slots[num_allocated];
-            slot.handle.id = cast(WindowID) num_allocated;      // we leave generation = 0
+            slot.handle = make_handle(num_allocated, 0);
             num_active++;
             return slot.handle;
         }
@@ -59,42 +59,42 @@ struct WindowAllocator(size_t num_slots) {
             auto slot = &slots[first_free_slot];
             first_free_slot = slot.next_window;
             num_active++;
-            return slot.handle;                                 // ID is unchanged from prev. alloc(), and generation is handled by free()
+            return slot.handle;                         // ID is unchanged from prev. alloc(), and generation is handled by free()
         }
         
-        return WindowHandle(WindowID.max, WindowID.max);
+        return make_handle(WindowID.max, WindowID.max);
     }
 
-    @nogc void free(WindowHandle handle) {
-        auto window = &slots[handle.id];
+    @nogc void free(WindowHandle handle) in (is_live(handle)) {
+        auto window = &slots[id_of(handle)];
 
-        const current_generation = window.handle.generation;
-        window.handle.generation = cast(ushort) (current_generation + 1);
+        window.handle = make_handle(id_of(window.handle), gen_of(window.handle) + 1);
         window.next_window = cast(WindowID) first_free_slot;
-        first_free_slot = handle.id;
+        first_free_slot = id_of(handle);
 
-        handlers[handle.id] = OsEventHandler();
+        callbacks[id_of(handle)] = WindowCallbacks();
 
         num_active--;
     }
 
-    @nogc Window* get(WindowHandle handle) {
-        if (handle.id > slots.length)
-            return null;
-
-        auto window = &slots[handle.id];
-
-        if (handle.generation != window.handle.generation)
-            return null;
-
-        return window;
+    @nogc Window* get(WindowHandle handle) in (is_live(handle)) {
+        return &slots[id_of(handle)];
     }
 
-    @nogc OsEventHandler* get_handler_for(WindowHandle handle) {
-        if (!is_valid(handle)) return null;
-
-        return &handlers[handle.id];
+    @nogc WindowCallbacks* get_callbacks_for(WindowHandle handle) in (is_live(handle)) {
+        return &callbacks[id_of(handle)];
     }
+}
+
+/// Extract the top 16-bytes of the value
+@nogc WindowID id_of(WindowHandle handle) { return cast(WindowID) (handle.value >> 16); }
+@nogc ushort gen_of(WindowHandle handle) { return cast(ushort) (handle.value & 0xFFFF); }
+
+@nogc WindowHandle make_handle(size_t id, size_t gen) in (id <= WindowID.max) {
+    auto handle = WindowHandle(cast(uint) id);
+    handle.value <<= 16;
+    handle.value |= gen;
+    return handle;
 }
 
 unittest {
