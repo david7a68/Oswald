@@ -52,8 +52,12 @@ WindowCallbacks get_callbacks(WindowHandle handle) in (is_live(handle)) {
     return *windows.get_callbacks_for(handle);
 }
 
-void close(WindowHandle handle) in (is_live(handle)) {
+void request_close(WindowHandle handle) in (is_live(handle)) {
     platform_close_window(windows.get(handle).platform_data);
+}
+
+void reset_close_request(WindowHandle handle) in (is_live(handle)) {
+    windows.get(handle).close_requested = false;
 }
 
 void retitle(WindowHandle handle, const char[] new_title) in (is_live(handle)) {
